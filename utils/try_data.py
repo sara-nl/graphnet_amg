@@ -13,7 +13,7 @@ import matlab.engine
 import numpy as np
 import pandas as pd
 
-from dataloader import generate_doubly_block_circulant, is_positive_definite, is_symmetric
+from data import generate_doubly_block_circulant, is_positive_definite, is_symmetric
 
 # from matlab
 def generate_A_delaunay_block_periodic_lognormal(num_unknowns_per_block, root_num_blocks, matlab_engine):
