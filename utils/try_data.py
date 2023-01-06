@@ -75,7 +75,7 @@ def visualize_distribution(arrs, legs , filename = 'histogram.png'):
 
 
 
-def main():
+def compare_data():
     matlab_engine = matlab.engine.start_matlab()
 
     #make this example reproducible
@@ -108,4 +108,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    compare_data()
