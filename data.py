@@ -91,17 +91,10 @@ def make_it_SPD(matrix):
     return matrix
 
 
-
-def main():
+if __name__ == '__main__':
     # for testing
     np.random.seed(1)
     A =  generate_doubly_block_circulant(points = 5, num_blocks = 3, sparsity =0.2, flag_SPD= True)
 
     print(is_positive_definite(A.toarray()))
     print(np.linalg.eigvals(A.toarray()))
-    
-    print('done')
-
-
-if __name__ == '__main__':
-    main()
