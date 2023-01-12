@@ -13,7 +13,7 @@ from dataset import DataSet
 from math_utils import compute_relaxation_matrices
 
 
-def generate_A(dist, points, num_blocks):
+def generate_A(points, num_blocks, dist = 'sparse_block_circulant'):
     if dist is 'sparse_block_circulant':
         # custom generated BC matrices, SPD BC if the flag is set to true
         A = generate_doubly_block_circulant(points, num_blocks, sparsity=0.01, flag_SPD = True)
