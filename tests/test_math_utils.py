@@ -3,7 +3,7 @@ import pytest
 import numpy as np
 from scipy import sparse
 import tensorflow as tf
-import utils
+import math_utils
 
 matrix_A = tf.constant([[1., 7., 3.], [2., 1., 6.], [0., 4., 1.]])
 
@@ -36,7 +36,7 @@ def test_to_prolongation_matrix():
     P_coo = P_csr.tocoo()
     coarse_nodes = [0, 2]
 
-    computed = utils.P_square_sparsity_pattern(P_csr, n_node, coarse_nodes)
+    computed = math_utils.P_square_sparsity_pattern(P_csr, n_node, coarse_nodes)
     expected = np.array([0, 0, 1, 3, 3]), np.array([0, 2, 2, 0, 2])
     # assert utils.P_square_sparsity_pattern(P_csr, n_node, coarse_nodes) == expected
     assert tf.experimental.numpy.allclose(computed, expected)
@@ -48,19 +48,19 @@ def test_matrix_mult():
 
 
 def test_frob_norm():
-    computed = utils.frob_norm(matrix_M)
+    computed = math_utils.frob_norm(matrix_M)
     expected = to_tensor(8.696929)
     assert math.isclose(computed, expected)
 
 
 def test_two_grid_error_matrix():
-    computed = utils.two_grid_error_matrix(matrix_A, matrix_P, matrix_S)
+    computed = math_utils.two_grid_error_matrix(matrix_A, matrix_P, matrix_S)
     expected = matrix_M()
     assert tf.experimental.numpy.allclose(computed, expected)
 
 
 def test_compute_C():
-    computed = utils.compute_C(matrix_A, matrix_P)
+    computed = math_utils.compute_C(matrix_A, matrix_P)
     expected = matrix_C()
     assert tf.experimental.numpy.allclose(computed, expected)
 

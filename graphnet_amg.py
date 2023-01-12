@@ -60,9 +60,7 @@ import model
 # from pyamg.classical import direct_interpolation
 from scipy.sparse import csr_matrix
 
-# === main ===
-# Pre:
-# Post:
+
 def main():
     # these variables will be moved to an input file later
     n_samples = 1000
@@ -106,15 +104,13 @@ def main():
 
     #TODO: visualise differences between P_baseline and P
 
-# Pre:
-# Post:
+
 def create_model():
     with tf.device('/gpu:0'):
         return model.EncodeProcessDecodeNonRecurrent()
     #
 
-# Pre:
-# Post:
+
 def train(As_csr, S, P_baseline_list, coarse_nodes_list, lr):
     model = create_model()
 
@@ -208,8 +204,6 @@ def train(As_csr, S, P_baseline_list, coarse_nodes_list, lr):
     return #checkpoint
 
 
-# Pre:
-# Post:
 def loss(A, S, P_square, P_baseline, coarse_nodes):
     P = ut.to_prolongation_matrix(P_square, P_baseline, coarse_nodes)
     S = tf.convert_to_tensor(S)
