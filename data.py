@@ -141,7 +141,7 @@ def load_from_file(As_filename, run=0):
 if __name__ == '__main__':
     # for testing
     np.random.seed(1)
-    A =  generate_doubly_block_circulant(c = 5, b = 3, sparsity =0.2, flag_SPD= True)
+    A =  generate_doubly_block_circulant( c = 5, b = 3, sparsity =0.2, flag_SPD= True)
 
     print(is_positive_definite(A.toarray()))
     print(np.linalg.eigvals(A.toarray()))
