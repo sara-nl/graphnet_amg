@@ -10,6 +10,7 @@ from scipy.linalg import circulant
 from sporco.linalg import block_circulant
 
 from dataset import DataSet
+from data_utils import save_to_file, load_from_file
 from math_utils import compute_relaxation_matrices
 
 
@@ -68,13 +69,15 @@ def generate_doubly_block_circulant(c, b, sparsity, flag_SPD):
 # generate dataset
 def create_dataset(num_As, data_config, run=0):
     # load As from file or generate new ones
-    As_filename = f"data_dir/training_As.npy"
+    As_filename = f"data_dir/numAs_{num_As}_points_{data_config.num_unknowns}_blocks_{data_config.num_blocks}.h5"
     if os.path.exists(As_filename):
         load_from_file(As_filename, run)
     else:
         As = [generate_A(data_config.num_unknowns,
                          data_config.num_blocks,
                          data_config.dist) for _ in range(num_As)]
+        if data_config.save_data:
+            save_to_file(As, data_config)
 
     return create_dataset_from_As(As, data_config)
 
@@ -121,21 +124,6 @@ def make_it_SPD(matrix):
         matrix += (np.abs(min_eigenvalue) + 1) * np.eye(matrix.shape[0])  
 
     return matrix
-
-# TODO load data from existing file: 
-def load_from_file(As_filename, run=0):
-    # load data based on index run
-    if not os.path.isfile(As_filename):
-        raise RuntimeError(f"file {As_filename} not found")
-    As = np.load(As_filename, allow_pickle=True)
-
-    # workaround for data generated with both matrices and point coordinates
-    if len(As.shape) == 1:
-        As = list(As)
-    elif len(As.shape) == 2:
-        As = list(As[0])
-    
-    return As
 
 
 if __name__ == '__main__':
