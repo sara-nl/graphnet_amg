@@ -10,7 +10,6 @@ from scipy.linalg import circulant
 from sporco.linalg import block_circulant
 
 from dataset import DataSet
-from data_utils import save_to_file, load_from_file
 from math_utils import compute_relaxation_matrices
 
 
@@ -69,15 +68,15 @@ def generate_doubly_block_circulant(c, b, sparsity, flag_SPD):
 # generate dataset
 def create_dataset(num_As, data_config, run=0):
     # load As from file or generate new ones
-    As_filename = f"data_dir/numAs_{num_As}_points_{data_config.num_unknowns}_blocks_{data_config.num_blocks}.h5"
+    As_filename = f"data_dir/numAs_{num_As}_points_{data_config.num_unknowns}_blocks_{data_config.num_blocks}.npy"
     if os.path.exists(As_filename):
-        load_from_file(As_filename, run)
+        As = load_from_file(As_filename)
     else:
         As = [generate_A(data_config.num_unknowns,
                          data_config.num_blocks,
                          data_config.dist) for _ in range(num_As)]
         if data_config.save_data:
-            save_to_file(As, data_config)
+            save_to_file(As, As_filename)
 
     return create_dataset_from_As(As, data_config)
 
@@ -85,7 +84,7 @@ def create_dataset_from_As(As, data_config):
     num_As = len(As)
     
     #Ss = [None] * num_As  # relaxation matrices are only created per block when calling loss()
-    Ss = [compute_relaxation_matrices(A) for A in range(num_As)]
+    Ss = [compute_relaxation_matrices(A) for A in As]
 
     solvers = [pyamg.ruge_stuben_solver(A, max_levels=2, keep=True, CF=data_config.splitting)
                    for A in As]
@@ -96,9 +95,21 @@ def create_dataset_from_As(As, data_config):
     
     return DataSet(As, Ss, coarse_nodes_list, baseline_P_list)
 
+# utils for load and save to file
+def save_to_file(As, filename):
+    num_As = len(As)
+    np_matrices = np.array(As)
+    
+    np.save(filename, np_matrices, allow_pickle=True)
 
+def load_from_file(filename, run=0):
+    if not os.path.isfile(filename):
+        raise RuntimeError(f"file {filename} not found")
+    np_loaded = np.load(filename, allow_pickle=True)
+    As = [csr_matrix(mat) for mat in np_loaded]
+    return As 
 
-# utils
+# utils for matrix operations
 def is_symmetric(A):
     return np.allclose(A, A.T)
 
@@ -128,7 +139,7 @@ def make_it_SPD(matrix):
 
 if __name__ == '__main__':
     # for testing
-    np.random.seed(1)
+    #np.random.seed(1)
     A =  generate_doubly_block_circulant( c = 5, b = 3, sparsity =0.2, flag_SPD= True)
 
     print(is_positive_definite(A.toarray()))
