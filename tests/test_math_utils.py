@@ -11,12 +11,12 @@ matrix_P = tf.constant([[1., 2.], [0., 5.], [7., 1.]])
 
 matrix_S = tf.constant([[1., 2., 3.], [4., 5., 6.], [7., 8., 9.]])
 
-matrix_C = tf.constant([[0.9762709, -0.36261493, -0.1394673],
-                        [0.07608497, -0.02826011, -0.01086928],
+matrix_C = tf.constant([[0.9762709, -0.36261493, -0.1394673], \
+                        [0.07608497, -0.02826011, -0.01086928], \
                         [-0.36392447, 0.13517192, 0.05198902]])
 
-matrix_M = tf.constant([[-0.05448174, -0.0366725, -0.01886326],
-                        [-3.1229234, -2.1019719, -1.0810204],
+matrix_M = tf.constant([[-0.05448174, -0.0366725, -0.01886326], \
+                        [-3.1229234, -2.1019719, -1.0810204], \
                         [-6.1913652, -4.167271, -2.143177]])
 
 
@@ -25,7 +25,21 @@ def to_tensor(array):
 
 
 def test_to_prolongation_matrix():
-    assert False
+    n_node = 4
+    P = np.array([[1, 2],
+                  [0, 1],
+                  [0, 0],
+                  [7, 1]
+                  ])
+
+    P_csr = sparse.csr_matrix(P)
+    P_coo = P_csr.tocoo()
+    coarse_nodes = [0, 2]
+
+    computed = math_utils.P_square_sparsity_pattern(P_csr, n_node, coarse_nodes)
+    expected = np.array([0, 0, 1, 3, 3]), np.array([0, 2, 2, 0, 2])
+    # assert utils.P_square_sparsity_pattern(P_csr, n_node, coarse_nodes) == expected
+    assert tf.experimental.numpy.allclose(computed, expected)
 
 
 def test_matrix_mult():
@@ -52,18 +66,4 @@ def test_compute_C():
 
 
 def test_p_square_sparsity_pattern():
-    n_node = 4
-    P = np.array([[1, 2],
-                  [0, 1],
-                  [0, 0],
-                  [7, 1]
-                  ])
-
-    P_csr = sparse.csr_matrix(P)
-    P_coo = P_csr.tocoo()
-    coarse_nodes = [0, 2]
-
-    computed = math_utils.P_square_sparsity_pattern(P_csr, n_node, coarse_nodes)
-    expected = np.array([0, 0, 1, 3, 3]), np.array([0, 2, 2, 0, 2])
-
-    assert tf.experimental.numpy.allclose(computed, expected)
+    assert False

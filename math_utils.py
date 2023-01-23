@@ -109,11 +109,11 @@ def compute_relaxation_matrices(A, tensor=False):
     A = A.toarray()
     L, D, U = decompose_matrix(A)
     a = D + L
-    S = scipy.linalg.solve_triangular(a=a, b= -U,
+    S = scipy.linalg.solve_triangular(  a=a, b= -U, 
                                         lower=True, unit_diagonal=False, overwrite_b=True, 
-                                        debug=None, check_finite=False)
+                                        debug=None, check_finite=False )
     return S
 
 
 if __name__ == '__main__':
-    P_baseline = None
+    P_baseline = None   

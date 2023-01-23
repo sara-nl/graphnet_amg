@@ -66,22 +66,24 @@ def generate_doubly_block_circulant(c, b, sparsity, flag_SPD):
     return csr_matrix(A)
 
 # generate dataset
-def load_dataset(num_As, data_config, As_filename=f"data_dir/training_As.npy",run=0):
+def load_dataset(num_As, data_config, datadir=f"data_dir"):
     # load As from file or generate new ones
+    As_filename = datadir+f"/numAs_{num_As}_points_{data_config.num_unknowns}_blocks_{data_config.num_blocks}.npy"
     if os.path.exists(As_filename):
-        As = load_from_file(As_filename, run)
+        load_from_file(As_filename)
     else:
         As = [generate_A(data_config.num_unknowns,
                          data_config.num_blocks,
                          data_config.dist) for _ in range(num_As)]
+        if data_config.save_data:
+            save_to_file(As, As_filename)
 
     return create_dataset_from_As(As, data_config)
 
 def create_dataset_from_As(As, data_config):
-    num_As = len(As)
-    
+    # num_As = len(As)
     #Ss = [None] * num_As  # relaxation matrices are only created per block when calling loss()
-    Ss = [compute_relaxation_matrices(A) for A in range(num_As)]
+    Ss = [compute_relaxation_matrices(A) for A in As]
 
     solvers = [pyamg.ruge_stuben_solver(A, max_levels=2, keep=True, CF=data_config.splitting)
                    for A in As]
@@ -92,9 +94,21 @@ def create_dataset_from_As(As, data_config):
     
     return DataSet(As, Ss, coarse_nodes_list, baseline_P_list)
 
+# utils for load and save to file
+def save_to_file(As, filename):
+    num_As = len(As)
+    np_matrices = np.array(As)
 
+    np.save(filename, np_matrices, allow_pickle=True)
 
-# utils
+def load_from_file(filename, run=0):
+    if not os.path.isfile(filename):
+        raise RuntimeError(f"file {filename} not found")
+    np_loaded = np.load(filename, allow_pickle=True)
+    As = [csr_matrix(mat) for mat in np_loaded]
+    return As
+
+# utils for matrix operations
 def is_symmetric(A):
     return np.allclose(A, A.T)
 
@@ -121,26 +135,11 @@ def make_it_SPD(matrix):
 
     return matrix
 
-# TODO load data from existing file: 
-def load_from_file(As_filename, run=0):
-    # load data based on index run
-    if not os.path.isfile(As_filename):
-        raise RuntimeError(f"file {As_filename} not found")
-    As = np.load(As_filename, allow_pickle=True)
-
-    # workaround for data generated with both matrices and point coordinates
-    if len(As.shape) == 1:
-        As = list(As)
-    elif len(As.shape) == 2:
-        As = list(As[0])
-    
-    return As
-
 
 if __name__ == '__main__':
     # for testing
-    np.random.seed(1)
-    A =  generate_doubly_block_circulant(points = 5, num_blocks = 3, sparsity =0.2, flag_SPD= True)
+    #np.random.seed(1)
+    A =  generate_doubly_block_circulant( c = 5, b = 3, sparsity =0.2, flag_SPD= True)
 
     print(is_positive_definite(A.toarray()))
     print(np.linalg.eigvals(A.toarray()))
