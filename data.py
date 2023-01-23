@@ -66,11 +66,10 @@ def generate_doubly_block_circulant(c, b, sparsity, flag_SPD):
     return csr_matrix(A)
 
 # generate dataset
-def create_dataset(num_As, data_config, run=0):
+def load_dataset(num_As, data_config, As_filename=f"data_dir/training_As.npy",run=0):
     # load As from file or generate new ones
-    As_filename = f"data_dir/training_As.npy"
     if os.path.exists(As_filename):
-        load_from_file(As_filename, run)
+        As = load_from_file(As_filename, run)
     else:
         As = [generate_A(data_config.num_unknowns,
                          data_config.num_blocks,
