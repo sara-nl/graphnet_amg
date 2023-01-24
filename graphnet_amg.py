@@ -70,14 +70,13 @@ def main():
     # splitting_method = "CLJP"
     # size_A = 2048
     learning_rate = 1.e-3
-    datafilename = f"/home/monicar/DL4NS/learning-amg/my_amg/data_dir"
 
     splittings = []
     P_baseline_list = []
     coarse_nodes_list = []
 
     # generate training As
-    training_dataset = data.load_dataset(n_samples, config.data_config,As_filename=datafilename)
+    training_dataset = data.create_dataset(n_samples, config.data_config)
     total_norm = 0.
 
     # for i in range(n_samples):

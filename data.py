@@ -66,11 +66,11 @@ def generate_doubly_block_circulant(c, b, sparsity, flag_SPD):
     return csr_matrix(A)
 
 # generate dataset
-def load_dataset(num_As, data_config, datadir=f"data_dir"):
+def create_dataset(num_As, data_config, run=0):
     # load As from file or generate new ones
-    As_filename = datadir+f"/numAs_{num_As}_points_{data_config.num_unknowns}_blocks_{data_config.num_blocks}.npy"
+    As_filename = f"data_dir/numAs_{num_As}_points_{data_config.num_unknowns}_blocks_{data_config.num_blocks}.npy"
     if os.path.exists(As_filename):
-        load_from_file(As_filename)
+        As = load_from_file(As_filename)
     else:
         As = [generate_A(data_config.num_unknowns,
                          data_config.num_blocks,
@@ -81,7 +81,8 @@ def load_dataset(num_As, data_config, datadir=f"data_dir"):
     return create_dataset_from_As(As, data_config)
 
 def create_dataset_from_As(As, data_config):
-    # num_As = len(As)
+    num_As = len(As)
+    
     #Ss = [None] * num_As  # relaxation matrices are only created per block when calling loss()
     Ss = [compute_relaxation_matrices(A) for A in As]
 
@@ -98,7 +99,7 @@ def create_dataset_from_As(As, data_config):
 def save_to_file(As, filename):
     num_As = len(As)
     np_matrices = np.array(As)
-
+    
     np.save(filename, np_matrices, allow_pickle=True)
 
 def load_from_file(filename, run=0):
@@ -106,7 +107,7 @@ def load_from_file(filename, run=0):
         raise RuntimeError(f"file {filename} not found")
     np_loaded = np.load(filename, allow_pickle=True)
     As = [csr_matrix(mat) for mat in np_loaded]
-    return As
+    return As 
 
 # utils for matrix operations
 def is_symmetric(A):
