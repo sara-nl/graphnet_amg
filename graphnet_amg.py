@@ -65,7 +65,6 @@ from scipy.sparse import csr_matrix
 def main():
     config = getattr(configs, 'GRAPH_LAPLACIAN_TRAIN')
     # these variables will be moved to an input file later
-    n_samples = 1000
     # matrix_type = "sparse_block_circulant"
     # splitting_method = "CLJP"
     # size_A = 2048
@@ -76,7 +75,7 @@ def main():
     coarse_nodes_list = []
 
     # generate training As
-    training_dataset = data.create_dataset(n_samples, config.data_config)
+    training_dataset = data.create_dataset(config.data_config)
     total_norm = 0.
 
     # for i in range(n_samples):
