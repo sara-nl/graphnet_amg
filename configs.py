@@ -10,7 +10,7 @@ class ModelConfig:
 class DataConfig:
     def __init__(self, dist='sparse_block_circulant', num_As=1024,
                  num_unknowns=8 ** 2, num_blocks=4, splitting='CLJP',
-                 load_data='True', save_data=True, data_dir=f"./data_dir"):
+                 load_data='True', save_data=True, data_dir=f"/home/monicar/DL4NS/learning-amg/my_amg/data_dir/"):
         self.dist = dist
         self.num_As = num_As
         self.num_unknowns = num_unknowns
