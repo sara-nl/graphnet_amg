@@ -80,25 +80,31 @@ def generate_doubly_block_circulant(c, b, sparsity, flag_SPD):
     return csr_matrix(A)
 
 
-def create_dataset(num_As, data_config, run=0):
+# generate dataset
+def create_dataset(data_config, run=0):
     """
     Load or Generates the matrices As
     The data are loaded from one file or multiple files based on num_As
     As is then passed to create the dataset with ruge_stuben_solver and Ss
     """
+    num_As = data_config.num_As
     num_per_batches = min(
         num_As, 10240
     )  # 10240 is the max number of mat allowed in a file
     num_batches = num_As // num_per_batches
     if num_batches > 1:
-        As_filename = f"/home/monicar/DL4NS/learning-amg/my_amg/data_dir/numAs_{num_As}_points_{data_config.num_unknowns}_blocks_{data_config.num_blocks}_batch_0.npy"
+        As_filename = f"{0}numAs_{1}_points_{data_config.num_unknowns}_blocks_{data_config.num_blocks}_batch_0.npy".format(
+            data_config.data_dir, data_config.num_As
+        )
         if os.path.exists(As_filename):
             As = load_from_batches(num_As, num_per_batches, num_batches, data_config)
         else:
             As = generate_in_batches(num_As, num_per_batches, num_batches, data_config)
     else:
         # load As from file or generate new ones
-        As_filename = f"data_dir/numAs_{num_As}_points_{data_config.num_unknowns}_blocks_{data_config.num_blocks}.npy"
+        As_filename = f"{0}numAs_{1}_points_{data_config.num_unknowns}_blocks_{data_config.num_blocks}.npy".format(
+            data_config.data_dir, data_config.num_As
+        )
         if os.path.exists(As_filename):
             As = load_from_file(As_filename)
         else:
@@ -131,12 +137,15 @@ def create_dataset_from_As(As, data_config):
     return DataSet(As, Ss, coarse_nodes_list, baseline_P_list)
 
 
+# utils for load and save to file
 def generate_in_one_file(num_As, data_config):
     """
     Utility function that generates As and save them in one file
     Returns As
     """
-    filename = f"data_dir/numAs_{num_As}_points_{data_config.num_unknowns}_blocks_{data_config.num_blocks}.npy"
+    filename = f"{0}numAs_{1}_points_{data_config.num_unknowns}_blocks_{data_config.num_blocks}.npy".format(
+        data_config.data_dir, data_config.num_As
+    )
     As = [
         generate_A(data_config.num_unknowns, data_config.num_blocks, data_config.dist)
         for _ in range(num_As)
@@ -177,7 +186,9 @@ def generate_in_batches(num_As, num_per_batches, num_batches, data_config):
             )
             for _ in range(num_per_batches)
         ]
-        filename = f"data_dir/numAs_{num_As}_points_{data_config.num_unknowns}_blocks_{data_config.num_blocks}_batch_{i}.npy"
+        filename = f"{0}numAs_{1}_points_{data_config.num_unknowns}_blocks_{data_config.num_blocks}_batch_{i}.npy".format(
+            data_config.data_dir, data_config.num_As
+        )
         save_to_file(As, filename)
         As_all.append(As)
 
@@ -191,7 +202,9 @@ def load_from_batches(num_As, mat_per_batches, num_batches, data_config, run=0):
     """
     As = []
     for i in range(num_batches):
-        filename = f"/home/monicar/DL4NS/learning-amg/my_amg/data_dir/numAs_{num_As}_points_{data_config.num_unknowns}_blocks_{data_config.num_blocks}_batch_{i}.npy"
+        filename = f"{0}numAs_{1}_points_{data_config.num_unknowns}_blocks_{data_config.num_blocks}_batch_{i}.npy".format(
+            data_config.data_dir, data_config.num_As
+        )
         As_loaded = load_from_file(filename)
         As.append(As_loaded)
 
