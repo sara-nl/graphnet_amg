@@ -71,7 +71,7 @@ def generate_doubly_block_circulant(c, b, sparsity, flag_SPD):
 def create_dataset(data_config, run=0):
     # load As from file or generate new ones
     As_filename = f"{0}numAs_{1}_points_{data_config.num_unknowns}_blocks_{data_config.num_blocks}.npy".format(
-        data_config.datadir, data_config.num_As)
+        data_config.data_dir, data_config.num_As)
     if os.path.exists(As_filename):
         As = load_from_file(As_filename)
     else:
