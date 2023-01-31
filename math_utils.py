@@ -111,7 +111,7 @@ def compute_relaxation_matrices(A, tensor=False):
     a = D + L
     S = scipy.linalg.solve_triangular(  a=a, b= -U, 
                                         lower=True, unit_diagonal=False, overwrite_b=True, 
-                                        debug=None, check_finite=False )
+                                        check_finite=False )
     return S
 
 
