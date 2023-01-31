@@ -85,6 +85,13 @@ def create_dataset(data_config, run=0):
 
 
 def create_dataset_from_As(As, data_config):
+    """
+    return DataSet which contains
+        As: list of csr
+        Ss: list of numpy arrays
+        coarse_node_list: list of numpy arrays
+        baseline_P_list: list of Tensorflow.Tensor objects
+    """
     num_As = len(As)
 
     # Ss = [None] * num_As  # relaxation matrices are only created per block when calling loss()
