@@ -118,21 +118,22 @@ def train(As_csr, S, P_baseline_list, coarse_nodes_list, lr):
 
     dtype = tf.float64
     # n_node is the number of rows/cols of A
-    n_node = tf.convert_to_tensor([csr.shape[0] for csr in As_csr])
+    n_nodes = tf.convert_to_tensor([csr.shape[0] for csr in As_csr])
     # n_edge is the number of nonzero elements in A
     # eliminate_zeros() is used here in case there are zero values in the matrices.
     # If we are certain that there are no zero values, we can skip it because it is a costly operation.
     # In that case just do n_edge = tf.convert_to_tensor([csr.nnz for csr in As_csr]).
     # Also note that eliminate_zeros() doesn't work for floating zeros 0.0
     # To remove floating zeros one needs to use a small tolerance to find them and then set them to 0
-    n_edge = tf.convert_to_tensor([csr.eliminate_zeros().nnz for csr in As_csr])
+    # n_edge = tf.convert_to_tensor([csr.eliminate_zeros().nnz for csr in As_csr])
+    n_edges = tf.convert_to_tensor([csr.nnz for csr in As_csr])
     coos = [csr.tocoo() for csr in As_csr]
     senders_numpy = np.concatenate([coo.row for coo in coos])
     senders = tf.convert_to_tensor(senders_numpy)
     receivers_numpy = np.concatenate([coo.col for coo in coos])
     receivers = tf.convert_to_tensor(receivers_numpy)
 
-    node_encodings_list=[]
+    node_encodings_list = []
     for csr, coarse_nodes in zip(As_csr, coarse_nodes_list):
         # Note that using np.isin() on sets does not give expected results, but lists are fine,
         # see isin() documentation. It returns a boolean array of the size of the number of nodes
@@ -150,7 +151,7 @@ def train(As_csr, S, P_baseline_list, coarse_nodes_list, lr):
     nodes = tf.convert_to_tensor(numpy_nodes, dtype=dtype)
 
     edge_encodings_list = []
-    for csr, coarse_nodes, P_baseline in zip(As_csr, coarse_nodes_list, P_baseline_list):
+    for csr, coarse_nodes, P_baseline, n_node in zip(As_csr, coarse_nodes_list, P_baseline_list, n_nodes):
         # Here the P_baseline should be in csr format
         P_baseline_rows, P_baseline_cols = math_utils.P_square_sparsity_pattern(P_baseline, n_node, coarse_nodes)
         coo = csr.tocoo()
@@ -173,7 +174,7 @@ def train(As_csr, S, P_baseline_list, coarse_nodes_list, lr):
 
     # numpy_edges stores the edge feature [Aij,1,0] or [Aij,0,1] for each edge (row) and graph (col)
     numpy_edges = np.concatenate(edge_encodings_list)
-    edges = tf.convert_to_tensor(numpy_edges, Ntype=dtype)
+    edges = tf.convert_to_tensor(numpy_edges, dtype=dtype)
 
     A_graph_tuple = gn.graphs.GraphsTuple(
         nodes = nodes,
@@ -181,8 +182,8 @@ def train(As_csr, S, P_baseline_list, coarse_nodes_list, lr):
         globals = None,
         receivers = receivers,
         senders = senders,
-        n_node = n_node,
-        n_edge = n_edge
+        n_node = n_nodes,
+        n_edge = n_edges
     )
 
     # converting the list of P_baseline's to Tensor format
@@ -193,13 +194,13 @@ def train(As_csr, S, P_baseline_list, coarse_nodes_list, lr):
     with tf.GradientTape() as tape:
         with tf.device('/gpu:0'):
             P_graphs_tuple = model(A_graph_tuple)
-        frob_loss, M = loss(As_tensor, S, P_graphs_tuple, P_baseline_tensor_list, coarse_nodes, nodes)
+        frob_loss, M = loss(As_tensor, S, P_graphs_tuple, P_baseline_tensor_list, coarse_nodes)
 
     print(f"frob loss: {frob_loss.numpy()}")
     # save checkpoints
     variables = model.get_all_variables()
     grads = tape.gradient(frob_loss, variables)
-    optimizer = tf.train.AdamOptimizer(learning_rate=lr)
+    optimizer = tf.keras.optimizers.Adam(learning_rate=lr)
     optimizer.apply_gradients(zip(grads, variables))
 
     #record checkpoints
