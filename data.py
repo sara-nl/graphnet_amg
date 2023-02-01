@@ -100,7 +100,7 @@ def create_dataset_from_As(As, data_config):
     solvers = [pyamg.ruge_stuben_solver(A, max_levels=2, keep=True, CF=data_config.splitting)
                for A in As]
     baseline_P_list = [solver.levels[0].P for solver in solvers]
-    baseline_P_list = [tf.convert_to_tensor(P.toarray(), dtype=tf.float64) for P in baseline_P_list]
+    # baseline_P_list = [tf.convert_to_tensor(P.toarray(), dtype=tf.float64) for P in baseline_P_list]
     splittings = [solver.levels[0].splitting for solver in solvers]
     coarse_nodes_list = [np.nonzero(splitting)[0] for splitting in splittings]
 
