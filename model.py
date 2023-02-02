@@ -22,15 +22,15 @@ class EncodeProcessDecodeNonRecurrent(snt.Module):
                  concat_encoder=True,
                  name="EncodeProcessDecodeNonRecurrent"):
         super(EncodeProcessDecodeNonRecurrent, self).__init__(name=name)
-        self._latent_size = latent_size
-        self._num_layers = num_layers
-        self._global_block = global_block
-        self._concat_encoder = concat_encoder
+        self._num_cores = num_cores
         self._edge_output_size = edge_output_size
         self._node_output_size = node_output_size
+        self._global_output_size = global_output_size
+        self._global_block = global_block
+        self._latent_size = latent_size
+        self._num_layers = num_layers
+        self._concat_encoder = concat_encoder
 
-
-    def _initialize(self):
         self._encoder = MLPGraphIndependent(self._latent_size, self._num_layers)
         self._cores = [MLPGraphNetwork(latent_size=self._latent_size, num_layers=self._num_layers,
                                        global_block=self._global_block) for _ in range(self._num_cores)]
@@ -49,12 +49,11 @@ class EncodeProcessDecodeNonRecurrent(snt.Module):
             global_fn = None
         else:
             global_fn = lambda: snt.Linear(self._global_output_size, name="global_output")
-        with self._enter_variable_scope():
-            self._output_transform = modules.GraphIndependent(edge_fn, node_fn,
-                                                              global_fn)
+
+        self._output_transform = modules.GraphIndependent(edge_fn, node_fn, global_fn)
+
 
     def __call__(self, input_op):
-        self._initialize()
         latent = self._encoder(input_op)
         latent0 = latent
         for i in range(len(self._cores)):
@@ -81,8 +80,6 @@ class MLPGraphNetwork(snt.Module):
         self._global_block = global_block
         self._last_round = last_round
 
-
-    def _initialize(self):
         partial_make_mlp_model = partial(make_mlp_model, self._latent_size, self._num_layers,
                                          last_round_edges=False)
         if self._last_round:
@@ -101,8 +98,8 @@ class MLPGraphNetwork(snt.Module):
                                                  },
                                                  global_block_opt={
                                                      "use_globals": True,
-                                                     "edges_reducer": tf.unsorted_segment_mean,
-                                                     "nodes_reducer": tf.unsorted_segment_mean
+                                                     "edges_reducer": tf.math.unsorted_segment_mean,
+                                                     "nodes_reducer": tf.math.unsorted_segment_mean
                                                  })
         else:
             self._network = modules.GraphNetwork(partial_make_mlp_model_edges, partial_make_mlp_model,
@@ -117,7 +114,6 @@ class MLPGraphNetwork(snt.Module):
                                                      "use_globals": False,
                                                  })
     def __call__(self, inputs):
-        self._initialize()
         return self._network(inputs)
 
 
@@ -132,15 +128,15 @@ class MLPGraphIndependent(snt.Module):
         self._latent_size = latent_size
         self._num_layers = num_layeres
 
-    def _initialize(self):
         partial_make_mlp_model = partial(make_mlp_model, self._latent_size, self._num_layers,
                                          last_round_edges=False)
         self._network = modules.GraphIndependent(
             edge_model_fn=partial_make_mlp_model,
             node_model_fn=partial_make_mlp_model,
             global_model_fn=partial_make_mlp_model)
+
+
     def __call__(self, inputs):
-        self._initialize()
         return self._network(inputs)
 
 
