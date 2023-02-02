@@ -24,6 +24,7 @@ class DataConfig:
 class Config:
     def __init__(self):
         self.data_config = DataConfig()
+        self.model_config = ModelConfig()
 
 
 GRAPH_LAPLACIAN_TRAIN = Config()
