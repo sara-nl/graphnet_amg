@@ -95,7 +95,7 @@ def main():
     #     coarse_nodes_list.append[np.nonzero(splitting)[0]]
 
     train(training_dataset.As, training_dataset.Ss, training_dataset.baseline_P_list,
-          training_dataset.coarse_nodes_list, learning_rate)
+          training_dataset.coarse_nodes_list, learning_rate, config.model_config)
 
     # # apply graph net to transform As
     # P_square = apply_GN(A, n_GNlayers)
@@ -107,14 +107,20 @@ def main():
     #TODO: visualise differences between P_baseline and P
 
 
-def create_model():
+def create_model(model_config):
     with tf.device('/gpu:0'):
-        return model.EncodeProcessDecodeNonRecurrent()
+        return model.EncodeProcessDecodeNonRecurrent(num_cores=model_config.mp_rounds,
+                                                     edge_output_size=1,
+                                                     node_output_size=1,
+                                                     global_block=model_config.global_block,
+                                                     latent_size=model_config.latent_size,
+                                                     num_layers=model_config.mlp_layers,
+                                                     concat_encoder=model_config.concat_encoder)
     #
 
 
-def train(As_csr, S, P_baseline_list, coarse_nodes_list, lr):
-    model = create_model()
+def train(As_csr, S, P_baseline_list, coarse_nodes_list, lr, model_config):
+    model = create_model(model_config)
 
     dtype = tf.float64
     # n_node is the number of rows/cols of A
