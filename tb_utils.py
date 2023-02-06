@@ -3,6 +3,7 @@ import random
 import string
 import os
 import shutil
+import json
 import glob
 
 """
@@ -46,7 +47,7 @@ def create_results_dir(model_name):
     local_dir = os.path.dirname(__file__)
     for py_file in glob.glob(local_dir + "/*.py"):
         shutil.copy(py_file, results_dir)
-
+    return
 
 def record_tb(summary_writer, frob_loss, frob_loss_pyamg=None):
     """to record log into tensorboard"""
@@ -71,3 +72,13 @@ def record_tb_loss(frob_loss, frob_loss_pyamg=None):
                 frob_loss_pyamg,
                 step=tf.compat.v1.train.get_global_step(),
             )
+
+
+def write_config_file(run_name, config):
+    results_dir = "results/" + run_name
+    config_dict = {"train_config": config.train_config.__dict__,
+                   "data_config": config.data_config.__dict__,
+                   "model_config": config.model_config.__dict__,
+                   "run_config": config.run_config.__dict__}
+    with open(f"{results_dir}/configs.json","w") as outfile:
+        json.dump(config_dict, outfile)
