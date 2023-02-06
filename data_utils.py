@@ -64,7 +64,7 @@ if __name__ == '__main__':
 
     config = getattr(configs, 'GRAPH_LAPLACIAN_TRAIN')
     data_config = config.data_config
-    num_As = 1000
+    num_As = config.num_As
     As = generate_and_save_As(num_As, data_config)
 
     # for testing load file
@@ -73,11 +73,3 @@ if __name__ == '__main__':
     #As_loaded = load_from_file(filename)
     #print("--- %s seconds for generating data ---" % (time.time() - start_time))
     #visualize_distribution(As_loaded)
-
-    
-
-
-
-
-
-
