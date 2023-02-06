@@ -61,7 +61,7 @@ def record_tb(summary_writer, frob_loss, frob_loss_pyamg=None):
     return None
 
 
-def record_tb_loss(frob_loss, frob_loss_pyamg=None):
+def record_tb_loss(frob_loss, iteration, frob_loss_pyamg=None):
     with tf.name_scope("losses"):
         tf.summary.scalar(
             "frob_loss", frob_loss, step=tf.compat.v1.train.get_global_step()
@@ -70,7 +70,7 @@ def record_tb_loss(frob_loss, frob_loss_pyamg=None):
             tf.summary.scalar(
                 "frob_loss_pyamg",
                 frob_loss_pyamg,
-                step=tf.compat.v1.train.get_global_step(),
+                step=iteration,
             )
 
 
