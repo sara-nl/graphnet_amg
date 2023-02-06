@@ -66,3 +66,4 @@ class Config:
 
 
 GRAPH_LAPLACIAN_TRAIN = Config()
+GRAPH_LAPLACIAN_EVAL = Config()
