@@ -70,7 +70,7 @@ def main():
     train_config = getattr(configs, 'GRAPH_LAPLACIAN_TRAIN')
     eval_config = getattr(configs, "GRAPH_LAPLACIAN_EVAL")
 
-    # updated to create a separate evaluation datas
+    # create a separate evaluation dataset
     numAs_eval = 2
     eval_dataset = data.load_eval(numAs_eval, train_config.data_config)
     eval_A_graphs_tuple = csrs_to_graphs_tuple(
@@ -92,7 +92,7 @@ def main():
     writer.set_as_default()
 
     for run in range(train_config.train_config.num_runs):
-        # updated to also include run, train_config.train_config.samples_per_run etc.
+        # create dataset for the run
         run_dataset = data.create_dataset(
             train_config.train_config.samples_per_run, train_config.data_config, run
         )
@@ -173,12 +173,13 @@ def csrs_to_graphs_tuple(As_csr, coarse_nodes_list, P_baseline_list, node_featur
     # n_node is the number of rows/cols of A
     n_nodes = tf.convert_to_tensor([csr.shape[0] for csr in As_csr])
     # n_edge is the number of nonzero elements in A
-    # eliminate_zeros() is used here in case there are zero values in the matrices.
+    # eliminate_zeros() can be used here in case there are zero values in the matrices:
+    # n_edge = tf.convert_to_tensor([csr.eliminate_zeros().nnz for csr in As_csr])
     # If we are certain that there are no zero values, we can skip it because it is a costly operation.
-    # In that case just do n_edge = tf.convert_to_tensor([csr.nnz for csr in As_csr]).
+    # In that case just do n_edge = tf.convert_to_tensor([csr.nnz for csr in As_csr])
     # Also note that eliminate_zeros() doesn't work for floating zeros 0.0
     # To remove floating zeros one needs to use a small tolerance to find them and then set them to 0
-    # n_edge = tf.convert_to_tensor([csr.eliminate_zeros().nnz for csr in As_csr])
+    # eliminate_zeros() is not used for now
     n_edges = tf.convert_to_tensor([csr.nnz for csr in As_csr])
     coos = [csr.tocoo() for csr in As_csr]
     senders_numpy = np.concatenate([coo.row for coo in coos])
@@ -199,7 +200,7 @@ def csrs_to_graphs_tuple(As_csr, coarse_nodes_list, P_baseline_list, node_featur
         node_encodings = np.stack([coarse_node_encodings, fine_node_encodings], axis=1)
         node_encodings_list.append(node_encodings)
 
-    # numpy_nodes stores the node feature [1,0] or [0,1] for each node (row) or each graph (col)
+    # numpy_nodes stores the node feature [1,0] or [0,1] for each node in all graphs
     numpy_nodes = np.concatenate(node_encodings_list)
     nodes = tf.convert_to_tensor(numpy_nodes, dtype=dtype)
 
@@ -223,12 +224,20 @@ def csrs_to_graphs_tuple(As_csr, coarse_nodes_list, P_baseline_list, node_featur
         # convert edge_encodings to array([[Aij,1,0],[Aij,0,1],...]) where [Aij,1,0] is if the edge is in P_baseline
         # and [Aij,0,1] is where the edge is not in P_baseline
         edge_encodings = np.stack([coo.data, baseline_edges, non_baseline_edges], axis=1)
+        # edge_encodings_list has dimensions num_As x num_edges x 3
+        # where num_edges is number of non-zero elements in A, and 3 is [Aij, 1, 0] or [Aij, 0, 1]
+        # [Aij, 1, 0] for when the edge is in the baseline P, otherwise not
         edge_encodings_list.append(edge_encodings)
 
-    # numpy_edges stores the edge feature [Aij,1,0] or [Aij,0,1] for each edge (row) and graph (col)
+    # numpy_edges stores the edge feature [Aij,1,0] or [Aij,0,1] for each edge in all graphs
     numpy_edges = np.concatenate(edge_encodings_list)
     edges = tf.convert_to_tensor(numpy_edges, dtype=dtype)
 
+    # RECEIVERS: the index is absolute (in other words, cumulative), i.e.
+    #     `graphs.RECEIVERS` take value in `[0, n_nodes]`. For instance, an edge
+    #     connecting the vertices with relative indices 2 and 3 in the second graph of
+    #     the batch would have a `RECEIVERS` value of `3 + graph.N_NODE[0]`.
+    # Likewise for SENDERS
     graphs_tuple = gn.graphs.GraphsTuple(
         nodes=nodes,
         edges=edges,
