@@ -28,6 +28,41 @@ def to_prolongation_matrix(P_square, P_baseline, coarse_nodes):
     return P
 
 
+def to_prolongation_matrix_tensor(matrix, coarse_nodes, baseline_P, nodes,
+                                  normalize_rows=True,
+                                  normalize_rows_by_node=False):
+    dtype = tf.float64
+    matrix = tf.cast(matrix, dtype)
+    matrix = tf.sparse.to_dense(matrix)
+
+    # prolongation from coarse point to itself should be identity. This corresponds to 1's on the diagonal
+    matrix = tf.linalg.set_diag(matrix, tf.ones(matrix.shape[0], dtype=dtype))
+
+    # select only columns corresponding to coarse nodes
+    matrix = tf.gather(matrix, coarse_nodes, axis=1)
+
+    # set sparsity pattern (interpolatory sets) to be of baseline prolongation
+    baseline_zero_mask = tf.cast(tf.not_equal(baseline_P, tf.zeros_like(baseline_P)), dtype)
+    matrix = matrix * baseline_zero_mask
+
+    if normalize_rows:
+        if normalize_rows_by_node:
+            baseline_row_sum = nodes
+        else:
+            baseline_row_sum = tf.reduce_sum(baseline_P, axis=1)
+        baseline_row_sum = tf.cast(baseline_row_sum, dtype)
+
+        matrix_row_sum = tf.reduce_sum(matrix, axis=1)
+        matrix_row_sum = tf.cast(matrix_row_sum, dtype)
+
+        # there might be a few rows that are all 0's - corresponding to fine points that are not connected to any
+        # coarse point. We use "divide_no_nan" to let these rows remain 0's
+        matrix = tf.math.divide_no_nan(matrix, tf.reshape(matrix_row_sum, (-1, 1)))
+
+        matrix = matrix * tf.reshape(baseline_row_sum, (-1, 1))
+    return matrix
+
+
 def P_square_sparsity_pattern(P_csr, n_node, coarse_nodes):
     P_coo = P_csr.tocoo()
 

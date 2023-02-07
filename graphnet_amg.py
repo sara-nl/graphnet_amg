@@ -1,6 +1,5 @@
 # TODOs:
 #	- types of training data
-#	- 'error' and 'residual' are used somewhat interchangeably. For clarity I should make it more precise
 #   - try a different baseline_P, e.g. the one used in Sandia report
 
 
@@ -136,16 +135,10 @@ def train_run(run_dataset, run, batch_size, config, model, optimizer, iteration,
         batch_A_graph_tuple = csrs_to_graphs_tuple(batch_dataset.As, batch_dataset.coarse_nodes_list,
                                                    batch_dataset.baseline_P_list)
 
-        # converting the list of P_baseline's to Tensor format
-        P_baseline_tensor_list = [tf.convert_to_tensor(P_baseline.toarray(), dtype=tf.float64)
-                                  for P_baseline in batch_dataset.baseline_P_list]
-        As_tensor = [tf.convert_to_tensor(A.toarray(), ) for A in batch_dataset.As]
-
         with tf.GradientTape() as tape:
             with tf.device('/gpu:0'):
                 P_graphs_tuple = model(batch_A_graph_tuple)
-            frob_loss, M = loss(As_tensor, batch_dataset.Ss, P_graphs_tuple, P_baseline_tensor_list,
-                                batch_dataset.coarse_nodes)
+            frob_loss, M = loss(batch_dataset, batch_A_graph_tuple, P_graphs_tuple)
 
         print(f"frob loss: {frob_loss.numpy()}")
         save_every = max(1000 // batch_size, 1)
@@ -159,13 +152,64 @@ def train_run(run_dataset, run, batch_size, config, model, optimizer, iteration,
                   eval_A_graph_tuple, eval_config)
     return checkpoint
 
-def loss(A, S, P_square, P_baseline, coarse_nodes):
-    P = math_utils.to_prolongation_matrix(P_square, P_baseline, coarse_nodes)
-    S = tf.convert_to_tensor(S)
-    M = math_utils.two_grid_error_matrix(A, P, S)
+def loss(dataset, A_graphs_tuple, P_graphs_tuple):
+    As = dataset.As
+    Ps_baseline = dataset.baseline_P_list
+    Ps_square, nodes_list = graphs_tuple_to_sparse_matrices(P_graphs_tuple, True)
 
-    norm = math_utils.frob_norm(M)
-    return norm
+    # converting the list of P_baseline's to Tensor format
+    # P_baseline_tensor_list = [tf.convert_to_tensor(P_baseline.toarray(), dtype=tf.float64)
+    #                           for P_baseline in batch_dataset.baseline_P_list]
+    # As_tensor = [tf.convert_to_tensor(A.toarray(), ) for A in batch_dataset.As]
+
+    batch_size = len(dataset.coarse_nodes_list)
+    total_nom = tf.Variable(0.0, dtype=tf.float64)
+    for i in range(batch_size):
+        #A = tf.sparse.to_dense(As[i])
+        A_tensor = tf.convert_to_tensor(As[i].toarray())
+        P_square = Ps_square[i]
+        coarse_nodes = dataset.coarse_nodes_list[i]
+        P_baseline = tf.convert_to_tensor(dataset.baseline_P_list[i].toarray(), dtype=tf.float64)
+        nodes = nodes_list[i]
+        P = math_utils.to_prolongation_matrix_tensor(P_square, coarse_nodes, P_baseline, nodes)
+        S = tf.convert_to_tensor(dataset.Ss[i])
+        M = math_utils.two_grid_error_matrix(A_tensor, P, S)
+
+        norm = math_utils.frob_norm(M)
+        total_nom += norm
+    return total_nom / batch_size, M
+
+
+def graphs_tuple_to_sparse_matrices(graphs_tuple, return_nodes=False):
+    num_graphs = int(graphs_tuple.n_node.shape[0])
+    graphs = [gn.utils_tf.get_graph(graphs_tuple, i)
+              for i in range(num_graphs)]
+
+    matrices = [graphs_tuple_to_sparse_tensor(graph) for graph in graphs]
+
+    if return_nodes:
+        nodes_list = [tf.squeeze(graph.nodes) for graph in graphs]
+        return matrices, nodes_list
+    else:
+        return matrices
+
+
+def graphs_tuple_to_sparse_tensor(graphs_tuple):
+    senders = graphs_tuple.senders
+    receivers = graphs_tuple.receivers
+    indices = tf.cast(tf.stack([senders, receivers], axis=1), tf.int64)
+
+    # first element in the edge feature is the value, the other elements are metadata
+    values = tf.squeeze(graphs_tuple.edges[:, 0])
+
+    shape = tf.concat([graphs_tuple.n_node, graphs_tuple.n_node], axis=0)
+    shape = tf.cast(shape, tf.int64)
+
+    matrix = tf.sparse.SparseTensor(indices, values, shape)
+    # reordering is required because the pyAMG coarsening step does not preserve indices order
+    matrix = tf.sparse.reorder(matrix)
+
+    return matrix
 
 
 def csrs_to_graphs_tuple(As_csr, coarse_nodes_list, P_baseline_list, node_feature_size=128):
