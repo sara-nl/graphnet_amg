@@ -163,21 +163,21 @@ def loss(dataset, A_graphs_tuple, P_graphs_tuple):
     # As_tensor = [tf.convert_to_tensor(A.toarray(), ) for A in batch_dataset.As]
 
     batch_size = len(dataset.coarse_nodes_list)
-    total_nom = tf.Variable(0.0, dtype=tf.float64)
+    total_norm = tf.Variable(0.0, dtype=tf.float64)
     for i in range(batch_size):
         #A = tf.sparse.to_dense(As[i])
-        A_tensor = tf.convert_to_tensor(As[i].toarray())
+        A_tensor = tf.convert_to_tensor(As[i].toarray(), dtype=tf.float64)
         P_square = Ps_square[i]
         coarse_nodes = dataset.coarse_nodes_list[i]
         P_baseline = tf.convert_to_tensor(dataset.baseline_P_list[i].toarray(), dtype=tf.float64)
         nodes = nodes_list[i]
         P = math_utils.to_prolongation_matrix_tensor(P_square, coarse_nodes, P_baseline, nodes)
-        S = tf.convert_to_tensor(dataset.Ss[i])
+        S = tf.convert_to_tensor(dataset.Ss[i], dtype=tf.float64)
         M = math_utils.two_grid_error_matrix(A_tensor, P, S)
 
         norm = math_utils.frob_norm(M)
-        total_nom += norm
-    return total_nom / batch_size, M
+        total_norm = total_norm + norm
+    return total_norm / batch_size, M
 
 
 def graphs_tuple_to_sparse_matrices(graphs_tuple, return_nodes=False):

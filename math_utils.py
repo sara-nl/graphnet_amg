@@ -125,7 +125,7 @@ def compute_C(A, P):
     A_coarse_inv = tf.linalg.inv(A_coarse)
     A_coarse_inv_RA = A_coarse_inv @ RA
     P_A_coarse_inv_RA = P @ A_coarse_inv_RA
-    I = tf.eye(len(A))
+    I = tf.eye(len(A), dtype=tf.float64)
     C = I - P_A_coarse_inv_RA
     return C
 
