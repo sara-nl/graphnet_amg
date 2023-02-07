@@ -50,29 +50,30 @@ def create_results_dir(model_name):
     return
 
 
-def record_tb(summary_writer, frob_loss, frob_loss_pyamg=None):
-    """to record log into tensorboard"""
+def record_tb(M, run, num_As, iteration, batch, batch_size, frob_loss, grads, loop, model, variables, eval_dataset,
+              eval_A_graphs_tuple, eval_config):
+    batch = run * num_As + batch
+    record_loss_every = max(1 // batch_size, 1)
+    
+    if batch % record_loss_every == 0:
+        record_tb_loss(frob_loss)
 
-    with summary_writer.as_default():
-        # TODO to test it during training, otherwise check this
-        # https://stackoverflow.com/questions/56961856/how-to-write-to-tensorboard-in-tensorflow-2
-        record_tb_loss(frob_loss, frob_loss_pyamg)
-        summary_writer.flush()
+    #record_params_every = max(300 // batch_size, 1)
+    #if batch % record_params_every == 0:
+    #    record_tb_params(batch_size, grads, loop, variables)
 
-    return None
+    #record_spectral_every = max(300 // batch_size, 1)
+    #if batch % record_spectral_every == 0:
+    #    record_tb_spectral_radius(M, model, eval_dataset, eval_A_graphs_tuple, eval_config)
+
+        
 
 
-def record_tb_loss(frob_loss, iteration, frob_loss_pyamg=None):
+def record_tb_loss(frob_loss):
     with tf.name_scope("losses"):
         tf.summary.scalar(
             "frob_loss", frob_loss, step=tf.compat.v1.train.get_global_step()
         )
-        if frob_loss_pyamg != None:
-            tf.summary.scalar(
-                "frob_loss_pyamg",
-                frob_loss_pyamg,
-                step=iteration,
-            )
 
 
 def write_config_file(run_name, config):
