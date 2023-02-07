@@ -49,6 +49,7 @@ def create_results_dir(model_name):
         shutil.copy(py_file, results_dir)
     return
 
+
 def record_tb(summary_writer, frob_loss, frob_loss_pyamg=None):
     """to record log into tensorboard"""
 
@@ -76,9 +77,11 @@ def record_tb_loss(frob_loss, iteration, frob_loss_pyamg=None):
 
 def write_config_file(run_name, config):
     results_dir = "results/" + run_name
-    config_dict = {"train_config": config.train_config.__dict__,
-                   "data_config": config.data_config.__dict__,
-                   "model_config": config.model_config.__dict__,
-                   "run_config": config.run_config.__dict__}
-    with open(f"{results_dir}/configs.json","w") as outfile:
+    config_dict = {
+        "train_config": config.train_config.__dict__,
+        "data_config": config.data_config.__dict__,
+        "model_config": config.model_config.__dict__,
+        # "run_config": config.run_config.__dict__
+    }
+    with open(f"{results_dir}/configs.json", "w") as outfile:
         json.dump(config_dict, outfile)

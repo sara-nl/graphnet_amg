@@ -12,20 +12,33 @@ from sporco.linalg import block_circulant
 from dataset import DataSet
 from math_utils import compute_relaxation_matrices
 
+"""
+Collection of method to generate/save/load the dataset
+supports loading of As per run to reduce the memory overload when num_As is big
+"""
 
-def generate_A(points, num_blocks, dist='sparse_block_circulant'):
-    if dist is 'sparse_block_circulant':
+
+def generate_A(points, num_blocks, dist="sparse_block_circulant"):
+    """
+    Input: num of unknowns, num of blocks, distribution
+    Output: a matrix A in csr format
+    """
+    if dist is "sparse_block_circulant":
         # custom generated BC matrices, SPD BC if the flag is set to true
-        A = generate_doubly_block_circulant(points, num_blocks, sparsity=0.01, flag_SPD=True)
-    elif dist is 'poisson':
+        A = generate_doubly_block_circulant(
+            points, num_blocks, sparsity=0.01, flag_SPD=True
+        )
+    elif dist is "poisson":
         grid_size = int(np.sqrt(points))
-        A = pyamg.gallery.poisson((grid_size, grid_size), type='FE')
-    elif dist is 'aniso':
+        A = pyamg.gallery.poisson((grid_size, grid_size), type="FE")
+    elif dist is "aniso":
         grid_size = int(np.sqrt(points))
-        stencil = pyamg.gallery.diffusion_stencil_2d(epsilon=0.01, theta=np.pi / 3, type='FE')
-        A = pyamg.gallery.stencil_grid(stencil, (grid_size, grid_size), format='csr')
-    elif dist is 'example':
-        A = pyamg.gallery.load_example(points)['A']
+        stencil = pyamg.gallery.diffusion_stencil_2d(
+            epsilon=0.01, theta=np.pi / 3, type="FE"
+        )
+        A = pyamg.gallery.stencil_grid(stencil, (grid_size, grid_size), format="csr")
+    elif dist is "example":
+        A = pyamg.gallery.load_example(points)["A"]
     return A
 
 
@@ -39,7 +52,7 @@ def generate_doubly_block_circulant(c, b, sparsity, flag_SPD):
     - b: num of the blocks
     - sparsity: density of the generated matrix, 1: a full matrix, 0: no non-zero items
     - flag_SPD: flag to impose SPD property on the generated A.
-    
+
     Returns:
     A sparse block circulant matrix of size 'n = b^2 * c' with b blocks of size 'k = c * b'.
     """
@@ -53,8 +66,12 @@ def generate_doubly_block_circulant(c, b, sparsity, flag_SPD):
     # doubly block circulant: first generate b small blocks of size c and then bigger b blocks
     B = []
     for _ in range(b):
-        c_blocks = [scipy.sparse.random(c, c, density=sparsity / ((i + 1) ** 3), data_rvs=rvs).toarray() for i in
-                    range(b)]
+        c_blocks = [
+            scipy.sparse.random(
+                c, c, density=sparsity / ((i + 1) ** 3), data_rvs=rvs
+            ).toarray()
+            for i in range(b)
+        ]
 
         block = block_circulant(c_blocks)
         B.append(block)
@@ -67,19 +84,25 @@ def generate_doubly_block_circulant(c, b, sparsity, flag_SPD):
     return csr_matrix(A)
 
 
-# generate dataset
-def create_dataset(data_config, run=0):
-    # load As from file or generate new ones
-    As_filename = f"{0}numAs_{1}_points_{data_config.num_unknowns}_blocks_{data_config.num_blocks}.npy".format(
-        data_config.data_dir, data_config.num_As)
+def create_dataset(samples_per_run, data_config, run=0):
+    """
+    At every run load or generate training samples As and return the DataSet { As, Ss, coarse list, baseline P }
+
+    --> how to use it in the main function:
+    "samples_per_run = config.data_config.num_As // config.train_config.num_runs
+
+    for run in range(config.train_config.num_runs):
+        run_dataset = create_dataset(samples_per_run, config.data_config, run)
+        train(run_dataset)
+
+    """
+    As_filename = f"{data_config.data_dir}numAs_{samples_per_run}_points_{data_config.num_unknowns}_blocks_{data_config.num_blocks}_run_{run}.npy"
     if os.path.exists(As_filename):
+        print("file exists, loading As from file")
         As = load_from_file(As_filename)
     else:
-        As = [generate_A(data_config.num_unknowns,
-                         data_config.num_blocks,
-                         data_config.dist) for _ in range(data_config.num_As)]
-        if data_config.save_data:
-            save_to_file(As, As_filename)
+        print("generating new As")
+        As = generate_in_one_file(samples_per_run, data_config, As_filename, run)
 
     return create_dataset_from_As(As, data_config)
 
@@ -93,12 +116,15 @@ def create_dataset_from_As(As, data_config):
         baseline_P_list: list of Tensorflow.Tensor objects
     """
     num_As = len(As)
+    print("As loaded, now creating Ss")
 
     # Ss = [None] * num_As  # relaxation matrices are only created per block when calling loss()
     Ss = [compute_relaxation_matrices(A) for A in As]
 
-    solvers = [pyamg.ruge_stuben_solver(A, max_levels=2, keep=True, CF=data_config.splitting)
-               for A in As]
+    solvers = [
+        pyamg.ruge_stuben_solver(A, max_levels=2, keep=True, CF=data_config.splitting)
+        for A in As
+    ]
     baseline_P_list = [solver.levels[0].P for solver in solvers]
     # baseline_P_list = [tf.convert_to_tensor(P.toarray(), dtype=tf.float64) for P in baseline_P_list]
     splittings = [solver.levels[0].splitting for solver in solvers]
@@ -108,19 +134,50 @@ def create_dataset_from_As(As, data_config):
 
 
 # utils for load and save to file
-def save_to_file(As, filename):
-    num_As = len(As)
-    np_matrices = np.array(As)
+def generate_in_one_file(samples_per_run, data_config, filename, run=0):
+    """
+    Utility function that generates As and save them in one file
+    Returns As
+    """
+    # filename = f"{data_config.data_dir}numAs_{samples_per_run}_points_{data_config.num_unknowns}_blocks_{data_config.num_blocks}_{run}.npy"
+    As = [
+        generate_A(data_config.num_unknowns, data_config.num_blocks, data_config.dist)
+        for _ in range(samples_per_run)
+    ]
+    if data_config.save_data:
+        save_to_file(As, filename)
 
+    return As
+
+
+def save_to_file(As, filename):
+    np_matrices = np.array(As)
     np.save(filename, np_matrices, allow_pickle=True)
 
 
 def load_from_file(filename, run=0):
+    """
+    Utility to load As from a single file
+    """
     if not os.path.isfile(filename):
         raise RuntimeError(f"file {filename} not found")
     np_loaded = np.load(filename, allow_pickle=True)
     As = [csr_matrix(mat) for mat in np_loaded]
     return As
+
+
+def load_eval(numAs, data_config):
+    """
+    Utility function to load the validation dataset
+    """
+    filename = f"{data_config.data_dir}numAs_{numAs}_points_{data_config.num_unknowns}_blocks_{data_config.num_blocks}.npy"
+
+    if os.path.exists(filename):
+        As = load_from_file(filename)
+    else:
+        As = generate_in_one_file(numAs, data_config, filename)
+
+    return create_dataset_from_As(As, data_config)
 
 
 # utils for matrix operations
@@ -136,7 +193,7 @@ def is_positive_definite(A):
         except np.linalg.LinAlgError:
             return False
     else:
-        print('Warning: matrix not symmetric')
+        print("Warning: matrix not symmetric")
         return False
 
 
@@ -152,7 +209,7 @@ def make_it_SPD(matrix):
     return matrix
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # for testing
     # np.random.seed(1)
     A = generate_doubly_block_circulant(c=5, b=3, sparsity=0.2, flag_SPD=True)

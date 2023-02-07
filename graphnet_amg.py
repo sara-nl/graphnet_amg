@@ -70,10 +70,12 @@ def main():
     train_config = getattr(configs, 'GRAPH_LAPLACIAN_TRAIN')
     eval_config = getattr(configs, "GRAPH_LAPLACIAN_EVAL")
 
-    # TODO: this needs to be updated to create a separate evaluation datas
-    eval_dataset = data.create_dataset(train_config.data_config)
-    eval_A_graphs_tuple = csrs_to_graphs_tuple(eval_dataset.As, eval_dataset.coarse_nodes_list,
-                                               eval_dataset.baseline_P_list)
+    # updated to create a separate evaluation datas
+    numAs_eval = 2
+    eval_dataset = data.load_eval(numAs_eval, train_config.data_config)
+    eval_A_graphs_tuple = csrs_to_graphs_tuple(
+        eval_dataset.As, eval_dataset.coarse_nodes_list, eval_dataset.baseline_P_list
+    )
 
     model = create_model(train_config.model_config)
     learning_rate = 1.e-3
@@ -90,8 +92,10 @@ def main():
     writer.set_as_default()
 
     for run in range(train_config.train_config.num_runs):
-        # TODO: this needs to be updated to also include run, train_config.train_config.samples_per_run etc.
-        run_dataset = data.create_dataset(train_config.data_config)
+        # updated to also include run, train_config.train_config.samples_per_run etc.
+        run_dataset = data.create_dataset(
+            train_config.train_config.samples_per_run, train_config.data_config, run
+        )
         checkpoint = train_run(run_dataset, run, batch_size, train_config, model, optimizer,
                                optimizer.iterations.numpy(), checkpoint_prefix, eval_dataset,
                                eval_A_graphs_tuple, eval_config)

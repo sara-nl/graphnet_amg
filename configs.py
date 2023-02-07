@@ -40,7 +40,7 @@ class TrainConfig:
     def __init__(
         self,
         samples_per_run=256,
-        num_runs=1000,
+        num_runs=1,
         batch_size=32,
         learning_rate=3e-3,
         coarsen=False,
