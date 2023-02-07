@@ -144,7 +144,7 @@ def train_run(run_dataset, run, batch_size, config, model, optimizer, iteration,
         with tf.GradientTape() as tape:
             with tf.device('/gpu:0'):
                 P_graphs_tuple = model(batch_A_graph_tuple)
-            frob_loss, M = loss(As_tensor, batch_dataset.S, P_graphs_tuple, P_baseline_tensor_list,
+            frob_loss, M = loss(As_tensor, batch_dataset.Ss, P_graphs_tuple, P_baseline_tensor_list,
                                 batch_dataset.coarse_nodes)
 
         print(f"frob loss: {frob_loss.numpy()}")
@@ -168,7 +168,7 @@ def loss(A, S, P_square, P_baseline, coarse_nodes):
     return norm
 
 
-def csrs_to_graphs_tuple(As_csr, coarse_nodes_list, P_baseline_list):
+def csrs_to_graphs_tuple(As_csr, coarse_nodes_list, P_baseline_list, node_feature_size=128):
     dtype = tf.float64
     # n_node is the number of rows/cols of A
     n_nodes = tf.convert_to_tensor([csr.shape[0] for csr in As_csr])
@@ -229,7 +229,7 @@ def csrs_to_graphs_tuple(As_csr, coarse_nodes_list, P_baseline_list):
     numpy_edges = np.concatenate(edge_encodings_list)
     edges = tf.convert_to_tensor(numpy_edges, dtype=dtype)
 
-    graph_tuple = gn.graphs.GraphsTuple(
+    graphs_tuple = gn.graphs.GraphsTuple(
         nodes=nodes,
         edges=edges,
         globals=None,
@@ -239,7 +239,9 @@ def csrs_to_graphs_tuple(As_csr, coarse_nodes_list, P_baseline_list):
         n_edge=n_edges
     )
 
-    return graph_tuple
+    graphs_tuple = gn.utils_tf.set_zero_global_features(graphs_tuple, node_feature_size, dtype=dtype)
+
+    return graphs_tuple
 
 
 def record_tb(M, run, num_As, iteration, batch, batch_size, frob_loss, grads, loop, model, variables, eval_dataset,
