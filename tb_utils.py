@@ -56,7 +56,7 @@ def record_tb(M, run, num_As, iteration, batch, batch_size, frob_loss, grads, lo
     record_loss_every = max(1 // batch_size, 1)
     
     if batch % record_loss_every == 0:
-        record_tb_loss(frob_loss)
+        record_tb_loss(iteration, frob_loss)
 
     #record_params_every = max(300 // batch_size, 1)
     #if batch % record_params_every == 0:
@@ -69,11 +69,8 @@ def record_tb(M, run, num_As, iteration, batch, batch_size, frob_loss, grads, lo
         
 
 
-def record_tb_loss(frob_loss):
-    with tf.name_scope("losses"):
-        tf.summary.scalar(
-            "frob_loss", frob_loss, step=tf.compat.v1.train.get_global_step()
-        )
+def record_tb_loss(iteration, frob_loss):
+    tf.summary.scalar('loss', frob_loss, step=tf.keras.backend.get_value(iteration))
 
 
 def write_config_file(run_name, config):
