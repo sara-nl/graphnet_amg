@@ -5,6 +5,7 @@ import os
 import shutil
 import json
 import glob
+import numpy as np
 
 """
 Utility functions to set TF2 and record logs in tensorboard
@@ -58,19 +59,48 @@ def record_tb(M, run, num_As, iteration, batch, batch_size, frob_loss, grads, lo
     if batch % record_loss_every == 0:
         record_tb_loss(iteration, frob_loss)
 
-    #record_params_every = max(300 // batch_size, 1)
-    #if batch % record_params_every == 0:
-    #    record_tb_params(batch_size, grads, loop, variables)
+    record_params_every = max(300 // batch_size, 1)
+    if batch % record_params_every == 0:
+        record_tb_params(iteration, batch_size, grads, variables)
 
-    #record_spectral_every = max(300 // batch_size, 1)
-    #if batch % record_spectral_every == 0:
-    #    record_tb_spectral_radius(M, model, eval_dataset, eval_A_graphs_tuple, eval_config)
+
+def record_tb_eval(M, run, num_As, iteration, batch, batch_size, eval_loss, eval_M):
+    batch = run * num_As + batch
+
+    record_spectral_every = max(300 // batch_size, 1)
+    if batch % record_spectral_every == 0:
+        record_tb_spectral_radius(iteration, M, eval_loss, eval_M)
+
+
+def record_tb_spectral_radius(iteration, M, eval_loss, eval_M):
+
+    spectral_radius = np.abs(np.linalg.eigvals(M.numpy())).max()
+    eval_spectral_radius = np.abs(np.linalg.eigvals(eval_M.numpy())).max()
+
+    tf.summary.scalar('spectral_radius', spectral_radius, step=iteration)
+    tf.summary.scalar('eval_loss', eval_loss, step = iteration)
+    tf.summary.scalar('eval_spectral_radius', eval_spectral_radius, step=iteration)
+
 
         
+def record_tb_params(iteration, batch_size, grads, variables):
+   
+    for i in range(len(variables)):
+        variable = variables[i]
+        variable_name = variable.name
+        grad = grads[i]
+        if grad is not None:
+            tf.summary.scalar(variable_name + '_grad', tf.norm(grad) / batch_size, step=iteration)
+            tf.summary.histogram(variable_name + '_grad_histogram', grad / batch_size, step=iteration)
+            tf.summary.scalar(variable_name + '_grad_fraction_dead', tf.nn.zero_fraction(grad), step=iteration)
+            tf.summary.scalar(variable_name + '_value', tf.norm(variable), step=iteration)
+            tf.summary.histogram(variable_name + '_value_histogram', variable, step=iteration)
 
 
 def record_tb_loss(iteration, frob_loss):
-    tf.summary.scalar('loss', frob_loss, step=tf.keras.backend.get_value(iteration))
+        tf.summary.scalar('loss', frob_loss, step=tf.keras.backend.get_value(iteration))
+
+
 
 
 def write_config_file(run_name, config):
