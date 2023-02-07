@@ -104,7 +104,7 @@ def main():
         )
         checkpoint = train_run(run_dataset, run, batch_size, train_config, model, optimizer,
                                optimizer.iterations.numpy(), checkpoint_prefix, eval_dataset,
-                               eval_A_graphs_tuple, eval_config)
+                               eval_A_graphs_tuple, eval_config, writer)
         # checkpoint.save(file_prefix=checkpoint_prefix)
     # generate training As
     # training_dataset = data.create_dataset(train_config.data_config)
