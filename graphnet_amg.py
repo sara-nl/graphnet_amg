@@ -168,7 +168,7 @@ def train_run(run_dataset, run, batch_size, config, model, optimizer, iteration,
 def validation(eval_dataset, eval_A_graphs_tuple, eval_config):
     with tf.device('/gpu:0'):
         eval_P_graphs_tuple = model(eval_A_graphs_tuple)
-        eval_loss, eval_M = loss(eval_dataset, eval_A_graphs_tuple, eval_P_graphs_tuple)
+    eval_loss, eval_M = loss(eval_dataset, eval_A_graphs_tuple, eval_P_graphs_tuple)
 
     return eval_loss, eval_M
 
