@@ -146,7 +146,7 @@ def train_run(run_dataset, run, batch_size, config, model, optimizer, iteration,
         save_every = max(1000 // batch_size, 1)
         if batch % save_every == 0:
             checkpoint = save_model_and_optimizer(checkpoint_prefix, model, optimizer, iteration)
-        variables = model.get_all_variables()
+        variables = model.variables
         grads = tape.gradient(frob_loss, variables)
         optimizer.apply_gradients(zip(grads, variables))
 
@@ -326,8 +326,9 @@ def csrs_to_graphs_tuple(As_csr, coarse_nodes_list, P_baseline_list, node_featur
 
 
 def save_model_and_optimizer(checkpoint_prefix, model, optimizer, iteration):
-    variables = model.get_all_variables()
-    variables_dict = {variables.name: variable for variable in variables}
+    # variables = model.get_all_variables()
+    variables = model.variables
+    variables_dict = {variable.name: variable for variable in variables}
     checkpoint = None
     return checkpoint
 
