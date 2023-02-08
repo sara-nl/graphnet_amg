@@ -251,6 +251,14 @@ def csrs_to_graphs_tuple(As_csr, coarse_nodes_list, P_baseline_list, node_featur
     receivers_numpy = np.concatenate([coo.col for coo in coos])
     receivers = tf.convert_to_tensor(receivers_numpy)
 
+    # see the source of _concatenate_data_dicts for details, but basically when we encode multiple graphs
+    #   into a GraphsTuple object, the dictionary expects receivers and senders to be NOT the indices of receivers
+    #   and senders of its own graph, but the indices plus the edge index. Basically this makes the receivers and
+    #   senders to be unique values in the GraphsTuple
+    offsets = gn.utils_tf._compute_stacked_offsets(n_nodes, n_edges)
+    senders += offsets
+    receivers += offsets
+
     node_encodings_list = []
     for csr, coarse_nodes in zip(As_csr, coarse_nodes_list):
         # Note that using np.isin() on sets does not give expected results, but lists are fine,
