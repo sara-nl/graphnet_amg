@@ -63,9 +63,11 @@ import uuid
 import os
 # from pyamg.classical import direct_interpolation
 from scipy.sparse import csr_matrix
+import wandb
 
 
 def main():
+    wandb.init(project="train_graphnet", entity="graphnet_amg", sync_tensorboard=True)
     train_config = getattr(configs, 'GRAPH_LAPLACIAN_TRAIN')
     eval_config = getattr(configs, "GRAPH_LAPLACIAN_EVAL")
 
@@ -88,7 +90,7 @@ def main():
     checkpoint_prefix = os.path.join(train_config.train_config.checkpoint_dir + "/" + run_name, "ckpt")
     log_dir = train_config.train_config.tensorboard_dir + "/" + run_name
     writer = tf.summary.create_file_writer(log_dir)
-    writer.set_as_default()
+    # writer.set_as_default()
 
     for run in range(train_config.train_config.num_runs):
         # create dataset for the run
@@ -97,7 +99,7 @@ def main():
         )
         checkpoint = train_run(run_dataset, run, batch_size, train_config, model, optimizer,
                                optimizer.iterations.numpy(), checkpoint_prefix, eval_dataset,
-                               eval_A_graphs_tuple, eval_config)
+                               eval_A_graphs_tuple, eval_config, writer)
         # checkpoint.save(file_prefix=checkpoint_prefix)
     # generate training As
     # training_dataset = data.create_dataset(train_config.data_config)
@@ -117,7 +119,7 @@ def create_model(model_config):
 
 
 def train_run(run_dataset, run, batch_size, config, model, optimizer, iteration, checkpoint_prefix, eval_dataset,
-              eval_A_graph_tuple, eval_config):
+              eval_A_graph_tuple, eval_config, writer):
 
     num_As = len(run_dataset.As)
     #if num_As % batch_size != 0:
@@ -148,9 +150,27 @@ def train_run(run_dataset, run, batch_size, config, model, optimizer, iteration,
         grads = tape.gradient(frob_loss, variables)
         optimizer.apply_gradients(zip(grads, variables))
 
-        tb_utils.record_tb(M, run, num_As, iteration, batch, batch_size, frob_loss, grads, loop, model, variables, eval_dataset,
-                  eval_A_graph_tuple, eval_config)
+        # tb_utils.record_tb(M, run, num_As, iteration, batch, batch_size, frob_loss, grads, loop, model, variables, eval_dataset,
+        #           eval_A_graph_tuple, eval_config)
+
+        with writer.as_default():
+            tb_utils.record_tb(M, run, num_As, iteration, batch, batch_size, frob_loss, grads, loop, model, variables,
+                               eval_dataset, eval_A_graph_tuple, eval_config)
+        writer.flush()
+
+        # validation
+        eval_loss, eval_M = validation(eval_dataset, eval_A_graph_tuple, eval_config)
+        with writer.as_default():
+            tb_utils.record_tb_eval(M, run, num_As, iteration, batch, batch_size, eval_loss, eval_M)
+        writer.flush()
     return checkpoint
+
+def validation(eval_dataset, eval_A_graphs_tuple, eval_config):
+    with tf.device('/gpu:0'):
+        eval_P_graphs_tuple = model(eval_A_graphs_tuple)
+        eval_loss, eval_M = loss(eval_dataset, eval_A_graphs_tuple, eval_P_graphs_tuple)
+
+    return eval_loss, eval_M
 
 def loss(dataset, A_graphs_tuple, P_graphs_tuple):
     As = dataset.As
@@ -295,28 +315,6 @@ def csrs_to_graphs_tuple(As_csr, coarse_nodes_list, P_baseline_list, node_featur
     graphs_tuple = gn.utils_tf.set_zero_global_features(graphs_tuple, node_feature_size, dtype=dtype)
 
     return graphs_tuple
-
-
-def record_tb(M, run, num_As, iteration, batch, batch_size, frob_loss, grads, loop, model, variables, eval_dataset,
-              eval_A_graphs_tuple, eval_config):
-    batch = run * num_As + batch
-    # enable eager execution
-    tf.compat.v1.enable_v2_behavior()
-
-    # A default TF 2.x summary writer
-    writer = tf.summary.create_file_writer("./logs")
-
-    record_loss_every = max(1 // batch_size, 1)
-    if batch % record_loss_every == 0:
-        tb_utils.record_tb_loss(writer, iteration, frob_loss)
-
-    # record_params_every = max(300 // batch_size, 1)
-    # if batch % record_params_every == 0:
-    #     record_tb_params(writer, batch_size, grads, loop, variables)
-    #
-    # record_spectral_every = max(300 // batch_size, 1)
-    # if batch % record_spectral_every == 0:
-    #     record_tb_spectral_radius(writer, M, model, eval_dataset, eval_A_graphs_tuple, eval_config)
 
 
 def save_model_and_optimizer(checkpoint_prefix, model, optimizer, iteration):
