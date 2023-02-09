@@ -108,7 +108,7 @@ def main():
 
 
 def create_model(model_config):
-    with tf.device('/gpu:0'):
+    with tf.device('/GPU:0'):
         return model.EncodeProcessDecodeNonRecurrent(num_cores=model_config.mp_rounds,
                                                      edge_output_size=1,
                                                      node_output_size=1,
@@ -138,7 +138,7 @@ def train_run(run_dataset, run, batch_size, config, model, optimizer, iteration,
                                                    batch_dataset.baseline_P_list)
 
         with tf.GradientTape() as tape:
-            with tf.device('/gpu:0'):
+            with tf.device('/GPU:0'):
                 P_graphs_tuple = model(batch_A_graph_tuple)
             frob_loss, M = loss(batch_dataset, batch_A_graph_tuple, P_graphs_tuple)
 
@@ -159,14 +159,14 @@ def train_run(run_dataset, run, batch_size, config, model, optimizer, iteration,
         writer.flush()
 
         # validation
-        eval_loss, eval_M = validation(eval_dataset, eval_A_graph_tuple, eval_config)
+        eval_loss, eval_M = validation(model, eval_dataset, eval_A_graph_tuple, eval_config)
         with writer.as_default():
             tb_utils.record_tb_eval(M, run, num_As, iteration, batch, batch_size, eval_loss, eval_M)
         writer.flush()
     return checkpoint
 
-def validation(eval_dataset, eval_A_graphs_tuple, eval_config):
-    with tf.device('/gpu:0'):
+def validation(model, eval_dataset, eval_A_graphs_tuple, eval_config):
+    with tf.device('/GPU:0'):
         eval_P_graphs_tuple = model(eval_A_graphs_tuple)
     eval_loss, eval_M = loss(eval_dataset, eval_A_graphs_tuple, eval_P_graphs_tuple)
 
