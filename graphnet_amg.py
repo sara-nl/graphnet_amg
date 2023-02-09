@@ -72,8 +72,8 @@ def main():
     eval_config = getattr(configs, "GRAPH_LAPLACIAN_EVAL")
 
     # create a separate evaluation dataset
-    numAs_eval = 2
-    eval_dataset = data.load_eval(numAs_eval, train_config.data_config)
+    numAs_eval = 1
+    eval_dataset = data.load_eval(numAs_eval, eval_config.data_config)
     eval_A_graphs_tuple = csrs_to_graphs_tuple(
         eval_dataset.As, eval_dataset.coarse_nodes_list, eval_dataset.baseline_P_list
     )
