@@ -84,7 +84,7 @@ def generate_doubly_block_circulant(c, b, sparsity, flag_SPD):
     return csr_matrix(A)
 
 
-def create_dataset(samples_per_run, data_config, run=0):
+def create_dataset(numAs, data_config, run=0, eval = False):
     """
     At every run load or generate training samples As and return the DataSet { As, Ss, coarse list, baseline P }
 
@@ -96,13 +96,17 @@ def create_dataset(samples_per_run, data_config, run=0):
         train(run_dataset)
 
     """
-    As_filename = f"{data_config.data_dir}numAs_{samples_per_run}_points_{data_config.num_unknowns}_blocks_{data_config.num_blocks}_run_{run}.npy"
+    As_filename = \
+        f"{data_config.data_dir}numAs_{numAs}_points_{data_config.num_unknowns}_blocks_{data_config.num_blocks}"
+    if not eval:
+        As_filename = As_filename + f"_run_{run}"
+    As_filename = As_filename + f".npy"
     if os.path.exists(As_filename):
         print("file exists, loading As from file")
         As = load_from_file(As_filename)
     else:
         print("generating new As")
-        As = generate_in_one_file(samples_per_run, data_config, As_filename, run)
+        As = generate_in_one_file(numAs, data_config, As_filename, run)
 
     return create_dataset_from_As(As, data_config)
 
@@ -164,20 +168,6 @@ def load_from_file(filename, run=0):
     np_loaded = np.load(filename, allow_pickle=True)
     As = [csr_matrix(mat) for mat in np_loaded]
     return As
-
-
-def load_eval(numAs, data_config):
-    """
-    Utility function to load the validation dataset
-    """
-    filename = f"{data_config.data_dir}numAs_{numAs}_points_{data_config.num_unknowns}_blocks_{data_config.num_blocks}.npy"
-
-    if os.path.exists(filename):
-        As = load_from_file(filename)
-    else:
-        As = generate_in_one_file(numAs, data_config, filename)
-
-    return create_dataset_from_As(As, data_config)
 
 
 # utils for matrix operations

@@ -73,7 +73,7 @@ def main():
 
     # create a separate evaluation dataset
     numAs_eval = 1
-    eval_dataset = data.load_eval(numAs_eval, eval_config.data_config)
+    eval_dataset = data.create_dataset(numAs_eval, eval_config.data_config, eval=True)
     eval_A_graphs_tuple = csrs_to_graphs_tuple(
         eval_dataset.As, eval_dataset.coarse_nodes_list, eval_dataset.baseline_P_list
     )
@@ -95,7 +95,7 @@ def main():
     for run in range(train_config.train_config.num_runs):
         # create dataset for the run
         run_dataset = data.create_dataset(
-            train_config.train_config.samples_per_run, train_config.data_config, run
+            train_config.train_config.samples_per_run, train_config.data_config, run=run
         )
         checkpoint = train_run(run_dataset, run, batch_size, train_config, model, optimizer,
                                optimizer.iterations.numpy(), checkpoint_prefix, eval_dataset,
