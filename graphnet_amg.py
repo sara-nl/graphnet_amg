@@ -140,9 +140,10 @@ def train_run(run_dataset, run, batch_size, config, model, optimizer, iteration,
         with tf.GradientTape() as tape:
             with tf.device('/GPU:0'):
                 P_graphs_tuple = model(batch_A_graph_tuple)
-            frob_loss, M = loss(batch_dataset, batch_A_graph_tuple, P_graphs_tuple)
+            frob_loss, frob_baseline, M, M_baseline = loss(batch_dataset, batch_A_graph_tuple, P_graphs_tuple)
 
         print(f"frob loss: {frob_loss.numpy()}")
+        print(f"frob baseline: {frob_baseline.numpy()}")
         save_every = max(1000 // batch_size, 1)
         if batch % save_every == 0:
             checkpoint = save_model_and_optimizer(checkpoint_prefix, model, optimizer, iteration)
@@ -184,6 +185,7 @@ def loss(dataset, A_graphs_tuple, P_graphs_tuple):
 
     batch_size = len(dataset.coarse_nodes_list)
     total_norm = tf.Variable(0.0, dtype=tf.float64)
+    total_norm_baseline = tf.Variable(0.0, dtype=tf.float64)
     for i in range(batch_size):
         #A = tf.sparse.to_dense(As[i])
         A_tensor = tf.convert_to_tensor(As[i].toarray(), dtype=tf.float64)
@@ -194,10 +196,12 @@ def loss(dataset, A_graphs_tuple, P_graphs_tuple):
         P = math_utils.to_prolongation_matrix_tensor(P_square, coarse_nodes, P_baseline, nodes)
         S = tf.convert_to_tensor(dataset.Ss[i], dtype=tf.float64)
         M = math_utils.two_grid_error_matrix(A_tensor, P, S)
-
+        M_baseline = math_utils.two_grid_error_matrix(A_tensor, P_baseline, S)
         norm = math_utils.frob_norm(M)
+        norm_baseline = math_utils.frob_norm(M_baseline)
         total_norm = total_norm + norm
-    return total_norm / batch_size, M
+        total_norm_baseline = total_norm_baseline + norm_baseline
+    return total_norm / batch_size, total_norm_baseline / batch_size, M, M_baseline
 
 
 def graphs_tuple_to_sparse_matrices(graphs_tuple, return_nodes=False):
