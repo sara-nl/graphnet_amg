@@ -79,7 +79,7 @@ def main():
     )
 
     model = create_model(train_config.model_config)
-    learning_rate = 1.e-3
+    learning_rate = train_config.train_config.learning_rate
     optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
     batch_size = train_config.train_config.batch_size
 
