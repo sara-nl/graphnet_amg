@@ -46,6 +46,7 @@ class TrainConfig:
         coarsen=False,
         checkpoint_dir="./training_dir",
         tensorboard_dir="./tb_dir",
+        results_dir= f"/home/monicar/DL4NS/learning-amg/my_amg/results/",
         load_model=False,
     ):
         self.samples_per_run = samples_per_run
@@ -55,7 +56,38 @@ class TrainConfig:
         self.coarsen = coarsen
         self.checkpoint_dir = checkpoint_dir
         self.tensorboard_dir = tensorboard_dir
+        self.results_dir = results_dir
         self.load_model = load_model
+
+
+class TestConfig:
+    def __init__(self, 
+                 dist='sparse_block_circulant', 
+                 splitting='CLJP',
+                 test_sizes=(1024, 2048),    #n = 1024, where n = b^2 * c -> for testing b = 1, c = 1024
+                 load_data=True, 
+                 num_runs=100, 
+                 cycle='W',
+                 max_levels=12, 
+                 iterations=81, 
+                 fp_threshold=1e-10, 
+                 strength=('classical', {'theta': 0.25}),
+                 presmoother=('gauss_seidel', {'sweep': 'forward', 'iterations': 1}),
+                 postsmoother=('gauss_seidel', {'sweep': 'forward', 'iterations': 1}),
+                 coarse_solver='pinv2'):
+        self.dist = dist
+        self.splitting = splitting
+        self.test_sizes = test_sizes
+        self.load_data = load_data
+        self.num_runs = num_runs
+        self.cycle = cycle
+        self.max_levels = max_levels
+        self.iterations = iterations
+        self.fp_threshold = fp_threshold
+        self.strength = strength
+        self.presmoother = presmoother
+        self.postsmoother = postsmoother
+        self.coarse_solver = coarse_solver
 
 
 class Config:
@@ -63,7 +95,10 @@ class Config:
         self.data_config = DataConfig()
         self.model_config = ModelConfig()
         self.train_config = TrainConfig()
+        self.test_config = TestConfig()
 
 
 GRAPH_LAPLACIAN_TRAIN = Config()
 GRAPH_LAPLACIAN_EVAL = Config()
+GRAPH_LAPLACIAN_EVAL.data_config.num_unknowns = 128
+GRAPH_LAPLACIAN_TEST = Config()
