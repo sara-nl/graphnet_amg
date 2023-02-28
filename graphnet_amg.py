@@ -83,7 +83,7 @@ def main():
     optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
     batch_size = train_config.train_config.batch_size
 
-    run_name = str(uuid.uuid4())  # generating a unique file name
+    run_name = wandb.run.name + '_' + str(uuid.uuid4())  # generating a unique file name
     tb_utils.create_results_dir(run_name)
     tb_utils.write_config_file(run_name, train_config)
 
@@ -100,7 +100,7 @@ def main():
         checkpoint = train_run(run_dataset, run, batch_size, train_config, model, optimizer,
                                optimizer.iterations.numpy(), checkpoint_prefix, eval_dataset,
                                eval_A_graphs_tuple, eval_config, writer)
-        # checkpoint.save(file_prefix=checkpoint_prefix)
+        checkpoint.save(file_prefix=checkpoint_prefix)
     # generate training As
     # training_dataset = data.create_dataset(train_config.data_config)
     # total_norm = 0.
@@ -169,7 +169,7 @@ def train_run(run_dataset, run, batch_size, config, model, optimizer, iteration,
 def validation(model, eval_dataset, eval_A_graphs_tuple, eval_config):
     with tf.device('/GPU:0'):
         eval_P_graphs_tuple = model(eval_A_graphs_tuple)
-    eval_loss, eval_M = loss(eval_dataset, eval_A_graphs_tuple, eval_P_graphs_tuple)
+    eval_loss, eval_frob_baseline, eval_M, eval_M_baseline = loss(eval_dataset, eval_A_graphs_tuple, eval_P_graphs_tuple)
 
     return eval_loss, eval_M
 
@@ -330,11 +330,15 @@ def csrs_to_graphs_tuple(As_csr, coarse_nodes_list, P_baseline_list, node_featur
 
 
 def save_model_and_optimizer(checkpoint_prefix, model, optimizer, iteration):
-    # variables = model.get_all_variables()
     variables = model.variables
     variables_dict = {variable.name: variable for variable in variables}
-    checkpoint = None
+    checkpoint = tf.train.Checkpoint(**variables_dict, optimizer=optimizer)
+    if not os.path.exists(checkpoint_prefix):
+        os.makedirs(checkpoint_prefix)
+    checkpoint.save(file_prefix=checkpoint_prefix)
     return checkpoint
 
 if __name__ == '__main__':
+    tb_utils.config_tf()
+    tb_utils.get_available_devices()
     main()
