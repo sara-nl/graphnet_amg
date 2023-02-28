@@ -7,9 +7,15 @@ import json
 import glob
 import numpy as np
 
+from tensorflow.python.client import device_lib
+
 """
 Utility functions to set TF2 and record logs in tensorboard
 """
+
+def get_available_devices():
+    local_device_protos = device_lib.list_local_devices()
+    return [x.name for x in local_device_protos] # example of output => ['/device:CPU:0', '/device:GPU:0']
 
 
 def config_tf():
@@ -17,10 +23,12 @@ def config_tf():
     Set TF2 (which is by default in eager execution) to support gpu memory growth
     """
     os.environ["TF_ENABLE_TENSORRT"] = "0"
+    os.environ['CUDA_VISIBLE_DEVICES'] ="0" 
     gpus = tf.config.experimental.list_physical_devices("GPU")
     if gpus:
         try:
             for gpu in gpus:
+                print("Name:", gpu.name, "  Type:", gpu.device_type)
                 tf.config.experimental.set_memory_growth(gpu, True)
         except RuntimeError as e:
             print(e)
