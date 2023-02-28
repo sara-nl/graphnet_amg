@@ -5,6 +5,15 @@ from math_utils import to_prolongation_matrix_tensor
 from graphnet_amg import csrs_to_graphs_tuple, graphs_tuple_to_sparse_tensor
 
 
+def sparse_tensor_to_csr(a):
+    indices = a.indices.numpy()
+    rows = indices[:, 0]
+    cols = indices[:, 1]
+    data = a.values.numpy()
+    shape = (a.shape[0].value, a.shape[1].value)
+    a_coo = coo_matrix((data, (rows, cols)), shape=shape)
+    return a_coo.tocsr()
+
 
 def model(A, coarse_nodes, baseline_P, C, graph_model):
     with tf.device(":/gpu:0"):
