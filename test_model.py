@@ -71,7 +71,7 @@ def test_size(model_name, graph_model, size, test_config, train_config, data_con
 
     
     if dist == 'sparse_block_circulant':
-        As = get_test_data(size, data_config, dist, root_num_blocks)
+        As = get_test_data(size, test_config)
     elif dist == 'lognormal_complex_fem':
         As = np.load(f"test_data_dir/fe_hole_logn_num_As_{100}_num_points_{size}.npy") #TODO
     else:
@@ -191,13 +191,13 @@ def load_model(checkpoint_dir, dummy_input, model_config, train_config, get_opti
     return model, optimizer, global_step
 
 
-def get_test_data(size, data_config, dist, num_blocks, numAs = 100):
-    filename = f"{data_config.data_dir}test_num_As_{numAs}_num_points_{size}.npy"
+def get_test_data(size, test_config):
+    filename = f"{test_config.data_dir}test_num_As_{test_config.num_As}_num_points_{size}.npy"
     if os.path.exists(filename):
         As = data.load_from_file(filename)
     else:
-        As = data.generate_A(size, num_blocks, dist)
-        data.save_to_file(As, filename)
+        test_config.num_unknowns = size
+        As = data.generate_in_one_file(test_config.num_As, test_config, filename)
 
     return As
 

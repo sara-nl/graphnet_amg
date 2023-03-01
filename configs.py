@@ -74,7 +74,12 @@ class TestConfig:
                  strength=('classical', {'theta': 0.25}),
                  presmoother=('gauss_seidel', {'sweep': 'forward', 'iterations': 1}),
                  postsmoother=('gauss_seidel', {'sweep': 'forward', 'iterations': 1}),
-                 coarse_solver='pinv2'):
+                 coarse_solver='pinv2',
+                 data_dir=f"/home/monicar/DL4NS/learning-amg/my_amg/data_dir/",
+                 num_As=100,
+                 num_unknowns=1024,
+                 num_blocks=1,
+                 ):
         self.dist = dist
         self.splitting = splitting
         self.test_sizes = test_sizes
@@ -88,6 +93,10 @@ class TestConfig:
         self.presmoother = presmoother
         self.postsmoother = postsmoother
         self.coarse_solver = coarse_solver
+        self.data_dir = data_dir
+        self.num_As = num_As
+        self.num_unknowns = num_unknowns
+        self.num_blocks = num_blocks
 
 
 class Config:
