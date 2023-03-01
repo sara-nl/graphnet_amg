@@ -66,6 +66,7 @@ class TestConfig:
                  splitting='CLJP',
                  test_sizes=(1024, 2048),    #n = 1024, where n = b^2 * c -> for testing b = 1, c = 1024
                  load_data=True, 
+                 save_data = True,
                  num_runs=100, 
                  cycle='W',
                  max_levels=12, 
@@ -84,6 +85,7 @@ class TestConfig:
         self.splitting = splitting
         self.test_sizes = test_sizes
         self.load_data = load_data
+        self.save_data = save_data
         self.num_runs = num_runs
         self.cycle = cycle
         self.max_levels = max_levels
