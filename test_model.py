@@ -17,7 +17,7 @@ import pyamg
 from ruge_stuben_custom_solver import ruge_stuben_custom_solver
 
 
-def test_model(model_name='241783b0-316c-49e9-922a-d5081886ff09', seed=1):
+def test_model(model_name='fragrant-dawn-19_3e6bcd7d-41cd-4dbe-aa13-760a06db0d3c', seed=1):
     if model_name is None:
         raise RuntimeError("model name required")
     #model_name = str(model_name)
