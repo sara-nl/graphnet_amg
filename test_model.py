@@ -153,7 +153,7 @@ def test_size(model_name, graph_model, size, test_config, train_config, data_con
 ## utils for loading the model 
 def get_model(model_name, model_config, train_config, train=False):
     dummy_input = data.As_poisson_grid(1, 7 ** 2)[0]
-    checkpoint_dir = train_config.results_dir + model_name
+    checkpoint_dir = train_config.checkpoint_dir + model_name
     graph_model, optimizer, global_step = load_model(checkpoint_dir, dummy_input, 
                                                      model_config, train_config,
                                                      get_optimizer=train)
