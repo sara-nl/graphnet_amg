@@ -62,6 +62,37 @@ def to_prolongation_matrix_tensor(matrix, coarse_nodes, baseline_P, nodes,
         matrix = matrix * tf.reshape(baseline_row_sum, (-1, 1))
     return matrix
 
+def to_prolongation_matrix_csr(matrix, coarse_nodes, baseline_P, nodes, normalize_rows=True,
+                               normalize_rows_by_node=False):
+    """
+    sparse version of the above function, inputs are csr matrices
+    """
+    # prolongation from coarse point to itself should be identity. This corresponds to 1's on the diagonal
+    matrix.setdiag(np.ones(matrix.shape[0]))
+
+    # select only columns corresponding to coarse nodes
+    matrix = matrix[:, coarse_nodes]
+
+    # set sparsity pattern (interpolatory sets) to be of baseline prolongation
+    baseline_P_mask = (baseline_P != 0).astype(np.float64)
+    matrix = matrix.multiply(baseline_P_mask)
+    matrix.eliminate_zeros()
+
+    if normalize_rows:
+        if normalize_rows_by_node:
+            baseline_row_sum = nodes
+        else:
+            baseline_row_sum = baseline_P.sum(axis=1)
+            baseline_row_sum = np.array(baseline_row_sum)[:, 0]
+
+        matrix_row_sum = np.array(matrix.sum(axis=1))[:, 0]
+        # https://stackoverflow.com/a/12238133
+        matrix_copy = matrix.copy()
+        matrix_copy.data /= matrix_row_sum.repeat(np.diff(matrix_copy.indptr))
+        matrix_copy.data *= baseline_row_sum.repeat(np.diff(matrix_copy.indptr))
+        matrix = matrix_copy
+    return matrix
+
 
 def P_square_sparsity_pattern(P_csr, n_node, coarse_nodes):
     P_coo = P_csr.tocoo()

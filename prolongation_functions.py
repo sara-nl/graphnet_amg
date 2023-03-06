@@ -1,9 +1,15 @@
 import tensorflow as tf
 from scipy.sparse import csr_matrix, coo_matrix
 
-from math_utils import to_prolongation_matrix_tensor
+from math_utils import to_prolongation_matrix_tensor, to_prolongation_matrix_csr
 from graphnet_amg import csrs_to_graphs_tuple, graphs_tuple_to_sparse_tensor
 
+def csr_to_sparse_tensor(a):
+    a_coo = a.tocoo()
+    a_coo.eliminate_zeros()
+    indices = np.mat([a_coo.row, a_coo.col]).transpose()
+    tensor = tf.SparseTensor(indices, a_coo.data, a_coo.shape)
+    return tf.sparse.reorder(tensor)
 
 def sparse_tensor_to_csr(a):
     indices = a.indices.numpy()
@@ -27,9 +33,9 @@ def model(A, coarse_nodes, baseline_P, C, graph_model):
     nodes = nodes_tensor.numpy()
 
     P_square_csr = sparse_tensor_to_csr(P_square_tensor)
-    P_tensor = to_prolongation_matrix_tensor(P_square_csr, coarse_nodes, baseline_P, nodes, normalize_rows=True, normalize_rows_by_node=False)
+    P_csr = to_prolongation_matrix_csr(P_square_csr, coarse_nodes, baseline_P, nodes, normalize_rows=True, normalize_rows_by_node=False)
 
-    return sparse_tensor_to_csr(P_tensor)
+    return P_csr
 
 
 def baseline(A, splitting, baseline_P, C):

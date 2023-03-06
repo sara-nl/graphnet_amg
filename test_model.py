@@ -109,7 +109,7 @@ def test_size(model_name, graph_model, size, test_config, train_config, data_con
                                                     keep=True, max_levels=max_levels,
                                                     CF=splitting,
                                                     coarse_solver=coarse_solver)
-        baseline_solver = None
+                                                    
         _ = baseline_solver.solve(b, x0=x0, tol=0.0, maxiter=iterations, cycle=cycle,
                                   residuals=baseline_residuals)
         baseline_residuals = np.array(baseline_residuals)
