@@ -24,3 +24,18 @@ source amg_venv/bin/activate
 
 pip install -r requirements.txt
 ```
+
+## Training
+
+```
+python graphnet_amg.py
+```
+
+## Test
+
+```
+python test_model.py
+```
+Model checkpoint is saved at 'training_dir/model_id'.
+
+Tensorboard log files are outputted to 'tb_dir/model_id'.
