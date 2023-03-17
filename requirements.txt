@@ -1,0 +1,14 @@
+dm-sonnet==2.0.1
+dm-tree==0.1.8
+numpy==1.23.5
+scipy==1.10.1
+tensorflow-estimator
+pyamg==4.2.3
+sporco==0.2.1
+uuid
+tqdm
+wandb==0.13.3
+fire
+graph_nets==1.1.0
+scikit-learn
+six
