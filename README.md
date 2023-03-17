@@ -12,3 +12,15 @@ In particular, we use a neural network to help build the prolongation operator P
 The objective of the neural network can be summarised as follows: given A and P_baseline, train P to minimise M. A is a matrix of size mxm, where m is the dimension of the unknowns in the linear system, i.e. the number of nodes in the finest grid. P_baseline is a matrix of size mxn, where n is the number of nodes in the coarser grid. n<m and typically n~m/2. P takes the same dimension and sparsity pattern of P_baseline. The problem can be naturally represented by a graph neural network where A is the adjacency matrix. The elements of A are an edge feature, representing the level of influence/dependency between two vertices. In our case, these elements represent the "closeness" of nodes, a concept that is natural in a geometrical multigrid problem but needs to be defined analogously in an algebraic multigrid problem. The GN then needs to output a graph with updated edge features. The output graph has the same dimensions as the input graph. But with a few simple steps, the new edge features can be used to form the non-zero elements of P.
 
 AMG methods are originally developed for As that are M-matrices, which are matrices that are symmetric and positive definite with positive entries on the diagonal and nonpositive off-diagonal entries. This assumption is not necessary for AMG to work, but standard AMG is less likely to be effective if As are far from M-matrices. In Luz's work, As are chosen to be sparse symmetric positive definite or semi-definite matrices.
+
+# Requirements
+
+```
+module load 2021
+module load TensorFlow/2.6.0-foss-2021a-CUDA-11.3.1
+
+python -m venv amg_venv
+source amg_venv/bin/activate
+
+pip install -r requirements.txt
+```
