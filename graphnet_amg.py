@@ -106,7 +106,7 @@ def train_run(run_dataset, run, batch_size, config, model, optimizer, iteration,
             checkpoint = save_model_and_optimizer(checkpoint_prefix, model, optimizer, iteration)
         variables = model.variables
         grads = tape.gradient(frob_loss, variables)
-        optimizer.apply_gradients(zip(grads, variables), global_step=iteration)
+        optimizer.apply_gradients(zip(grads, variables))
 
         # tb_utils.record_tb(M, run, num_As, iteration, batch, batch_size, frob_loss, grads, loop, model, variables, eval_dataset,
         #           eval_A_graph_tuple, eval_config)
