@@ -44,9 +44,9 @@ class TrainConfig:
         batch_size=32,
         learning_rate=3e-3,
         coarsen=False,
-        checkpoint_dir=f"/home/monicar/DL4NS/learning-amg/my_amg/training_dir/",
+        checkpoint_dir=f"./training_dir/",
         tensorboard_dir="./tb_dir",
-        results_dir= f"/home/monicar/DL4NS/learning-amg/my_amg/results/",
+        results_dir= f"./results/",
         load_model=False,
     ):
         self.samples_per_run = samples_per_run
