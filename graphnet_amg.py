@@ -26,9 +26,10 @@ import wandb
 
 
 def main():
-    wandb.init(project="train_graphnet", entity="graphnet_amg", sync_tensorboard=True)
     train_config = getattr(configs, 'GRAPH_LAPLACIAN_TRAIN')
     eval_config = getattr(configs, "GRAPH_LAPLACIAN_EVAL")
+    wandb.init(project=train_config.train_config.wandb_project,
+               entity=train_config.train_config.wandb_user, sync_tensorboard=True)
 
     # create a separate evaluation dataset
     numAs_eval = 1

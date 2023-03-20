@@ -47,6 +47,8 @@ class TrainConfig:
         checkpoint_dir=f"./training_dir/",
         tensorboard_dir="./tb_dir",
         results_dir= f"./results/",
+        wandb_project="train_graphnet",
+        wandb_user="graphnet_amg",
         load_model=False,
     ):
         self.samples_per_run = samples_per_run
@@ -57,6 +59,8 @@ class TrainConfig:
         self.checkpoint_dir = checkpoint_dir
         self.tensorboard_dir = tensorboard_dir
         self.results_dir = results_dir
+        self.wandb_project = wandb_project
+        self.wandb_user = wandb_user
         self.load_model = load_model
 
 
