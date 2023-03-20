@@ -60,9 +60,6 @@ def main():
                                optimizer.iterations.numpy(), checkpoint_prefix, eval_dataset,
                                eval_A_graphs_tuple, eval_config, writer)
         checkpoint.save(file_prefix=checkpoint_prefix)
-    # generate training As
-    # training_dataset = data.create_dataset(train_config.data_config)
-    # total_norm = 0.
     return
 
 
@@ -81,8 +78,8 @@ def train_run(run_dataset, run, batch_size, config, model, optimizer, iteration,
               eval_A_graph_tuple, eval_config, writer):
 
     num_As = len(run_dataset.As)
-    #if num_As % batch_size != 0:
-    #    raise RuntimeError("batch size must divide training data size")
+    if num_As % batch_size != 0:
+        raise RuntimeError("batch size must divide training data size")
 
     run_dataset = run_dataset.shuffle()
     num_batches = num_As // batch_size
@@ -114,8 +111,7 @@ def train_run(run_dataset, run, batch_size, config, model, optimizer, iteration,
         #           eval_A_graph_tuple, eval_config)
 
         with writer.as_default():
-            tb_utils.record_tb(M, run, num_As, iteration, batch, batch_size, frob_loss, grads, loop, model, variables,
-                               eval_dataset, eval_A_graph_tuple, eval_config)
+            tb_utils.record_tb(M, run, num_As, iteration, batch, batch_size, frob_loss, grads, loop, model, variables, eval_dataset, eval_A_graph_tuple, eval_config)
         writer.flush()
 
         # validation
