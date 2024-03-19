@@ -13,9 +13,10 @@ The objective of the neural network can be summarised as follows: given A and P_
 
 AMG methods are originally developed for As that are M-matrices, which are matrices that are symmetric and positive definite with positive entries on the diagonal and nonpositive off-diagonal entries. This assumption is not necessary for AMG to work, but standard AMG is less likely to be effective if As are far from M-matrices. In Luz et al.'s work, As are chosen to be sparse symmetric positive definite or semi-definite matrices.
 
-# Requirements
+# How to get started on Snellius, the Dutch national supercomputer
 
 ```
+module purge
 module load 2021
 module load TensorFlow/2.6.0-foss-2021a-CUDA-11.3.1
 
