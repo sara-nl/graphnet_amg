@@ -1,7 +1,7 @@
 # graphnet_amg
 Graph net boosted prolongation operator for algebraic multigrid
 
-This code trains a graph neural network to select the interpolation weights in the prolongation operator for transporting errors between grids in the algebraic multigrid (AMG) algorithm. Our work is mostly based on Luz et al. at https://arxiv.org/abs/2003.05744 and https://github.com/ilayluz/learning-amg.git
+This code trains a graph neural network to select the interpolation weights in the prolongation operator for transporting errors between grids in the algebraic multigrid (AMG) algorithm. Our work is mostly based on Luz et al. See their paper at https://arxiv.org/abs/2003.05744 and repository at https://github.com/ilayluz/learning-amg.git
 
 AMG is an iterative algorithm for solving large and sparse linear systems that arise from, for example, discretisation of partial differential equations (PDEs). In each iteration, high frequency errors are eliminated by a classic relaxation scheme (commonly Gauss-Seidel), whereas low-frequency errors (i.e. smooth errors) are transferred onto a coarser grid where the smooth errors can be more efficiently removed by further relaxation sweeps. Multiple levels of such grids of increasing coarseness can be used for reducing the error. The interpolation operators transport errors between adjacent grid levels.
 
